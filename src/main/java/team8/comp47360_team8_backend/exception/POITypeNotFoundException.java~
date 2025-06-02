@@ -1,0 +1,15 @@
+package team8.comp47360_team8_backend.exception;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
+/**
+ * @Author : Ze Li
+ * @Date : 02/06/2025 22:19
+ * @Version : V1.0
+ * @Description :
+ */
+@ResponseStatus(HttpStatus.NOT_FOUND)
+public class POITypeNotFoundException extends RuntimeException {
+
+}
