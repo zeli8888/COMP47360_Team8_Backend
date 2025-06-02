@@ -25,8 +25,8 @@ public class POIType {
     @Column(unique = true, nullable = false)
     private String poiTypeName;
 
-    @JsonIgnore
     @OneToMany(mappedBy = "poiType", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = false)
+    @JsonIgnore
     private Set<POI> POIs = new HashSet<>();
 
     public POIType() {
@@ -38,10 +38,12 @@ public class POIType {
         this.POIs = POIs;
     }
 
+    @JsonIgnore
     public Set<POI> getPOIs() {
         return POIs;
     }
 
+    @JsonIgnore
     public void setPOIs(Set<POI> POIs) {
         this.POIs = POIs;
     }
