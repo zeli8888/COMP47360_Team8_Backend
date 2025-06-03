@@ -1,17 +1,7 @@
-package team8.comp47360_team8_backend.service;
-
-import team8.comp47360_team8_backend.model.Zone;
-
-/**
- * @Author : Ze Li
- * @Date : 02/06/2025 21:35
- * @Version : V1.0
- * @Description :
- */
-public interface ZoneService {
-    Zone getZoneById(long zoneId);
-    Zone getZoneByName(String zoneName);
-    Zone addZone(Zone zone);
-    Zone updateZone(Zone zone);
-    void deleteZone(long zoneId);
+package team8.comp47360_team8_backend.service;/**
+* @Author : Ze Li
+* @Date : 03/06/2025 11:52
+* @Version : V1.0
+* @Description : 
+*/public interface ZoneService {
 }

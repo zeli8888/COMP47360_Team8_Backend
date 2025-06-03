@@ -2,12 +2,14 @@ package team8.comp47360_team8_backend.service.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import team8.comp47360_team8_backend.dto.ZoneBusynessDTO;
 import team8.comp47360_team8_backend.exception.POITypeNotFoundException;
 import team8.comp47360_team8_backend.model.POI;
 import team8.comp47360_team8_backend.model.POIType;
 import team8.comp47360_team8_backend.repository.POITypeRepository;
 import team8.comp47360_team8_backend.service.POIService;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -28,5 +30,10 @@ public class POIServiceImpl implements POIService {
     public Set<POI> getPOIsByPOITypeName(String poiTypeName) {
         POIType poiType = poiTypeRepository.getByPoiTypeName(poiTypeName).orElseThrow(() -> new POITypeNotFoundException(poiTypeName));
         return poiType.getPOIs();
+    }
+
+    @Override
+    public List<POI> orderPOIsByRecommendation(Set<POI> pois, POI lastPOI, List<ZoneBusynessDTO> zoneBusynessDTOs) {
+        return new ArrayList<>(pois);
     }
 }

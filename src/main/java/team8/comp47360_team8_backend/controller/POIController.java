@@ -4,11 +4,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import team8.comp47360_team8_backend.dto.POIZoneBusynessDTO;
+import team8.comp47360_team8_backend.dto.ZoneBusynessDTO;
 import team8.comp47360_team8_backend.model.POI;
 import team8.comp47360_team8_backend.service.POIService;
+import team8.comp47360_team8_backend.service.ZoneService;
 
 import java.time.LocalDateTime;
-import java.util.Set;
+import java.util.List;
 
 /**
  * @Author : Ze Li
@@ -23,9 +26,18 @@ public class POIController {
     @Autowired
     private POIService poiService;
 
+    @Autowired
+    private ZoneService zoneService;
+
     @GetMapping("/pois")
-    public ResponseEntity<Set<POI>> getPOIsByPOITypeName(@RequestBody POI lastPOI, @RequestParam(required = true) String poiTypeName,
-                                                         @RequestParam(required = true) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateTime) {
-        return ResponseEntity.ok(poiService.getPOIsByPOITypeName(poiTypeName));
+    public ResponseEntity<POIZoneBusynessDTO> getPOIsByPOITypeName(@RequestBody POI lastPOI, @RequestParam(required = true) String poiTypeName,
+                                                                   @RequestParam(required = true) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateTime) {
+
+        POIZoneBusynessDTO poiZoneBusynessDTO = new POIZoneBusynessDTO();
+        List<ZoneBusynessDTO> zoneBusynessDTOs = zoneService.predictZoneBusyness(dateTime);
+        List<POI> poIsByRecommendation = poiService.orderPOIsByRecommendation(poiService.getPOIsByPOITypeName(poiTypeName), lastPOI, zoneBusynessDTOs);
+        poiZoneBusynessDTO.setPois(poIsByRecommendation);
+        poiZoneBusynessDTO.setZoneBusynesses(zoneBusynessDTOs);
+        return ResponseEntity.ok(poiZoneBusynessDTO);
     }
 }
