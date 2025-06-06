@@ -34,11 +34,11 @@ class Comp47360Team8BackendApplicationTests {
         Zone zone2 = new Zone(2L, "zone2", 3L);
 
         POI park1 = new POI(null, "park1", "park1 desc", 1.0, 1.0, zone1, park);
-        POI park2 = new POI(null, "park2", "park2 desc", 1.0, 1.0, zone1, park);
-        POI park3 = new POI(null, "park3", "park3 desc", 1.0, 1.0, zone2, park);
+        POI park2 = new POI(null, "park2", "park2 desc", 2.0, 2.0, zone1, park);
+        POI park3 = new POI(null, "park3", "park3 desc", 3.0, 3.0, zone2, park);
         POI restaurant1 = new POI(null, "restaurant1", "restaurant1 desc", 1.0, 1.0, zone1, restaurant);
-        POI restaurant2 = new POI(null, "restaurant2", "restaurant2 desc", 1.0, 1.0, zone2, restaurant);
-        POI restaurant3 = new POI(null, "restaurant3", "restaurant3 desc", 1.0, 1.0, zone2, restaurant);
+        POI restaurant2 = new POI(null, "restaurant2", "restaurant2 desc", 2.0, 2.0, zone2, restaurant);
+        POI restaurant3 = new POI(null, "restaurant3", "restaurant3 desc", 3.0, 3.0, zone2, restaurant);
 
         poiRepository.save(park1);
         poiRepository.save(park2);

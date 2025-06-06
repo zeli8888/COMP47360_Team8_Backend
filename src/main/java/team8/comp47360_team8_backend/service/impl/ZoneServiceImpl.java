@@ -2,13 +2,14 @@ package team8.comp47360_team8_backend.service.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import team8.comp47360_team8_backend.dto.ZoneBusynessDTO;
 import team8.comp47360_team8_backend.model.Zone;
 import team8.comp47360_team8_backend.repository.ZoneRepository;
 import team8.comp47360_team8_backend.service.ZoneService;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -24,12 +25,17 @@ public class ZoneServiceImpl implements ZoneService {
     private ZoneRepository zoneRepository;
 
     @Override
-    public List<ZoneBusynessDTO> predictZoneBusyness(LocalDateTime dateTime) {
+    public HashMap<Long, Double> predictZoneBusyness(LocalDateTime dateTime) {
         List<Zone> zones = zoneRepository.findAllByOrderByZoneIdAsc();
-        List<ZoneBusynessDTO> zoneBusynessDTOs = new ArrayList<>(zones.size());
-        for (Zone zone : zones) {
-            zoneBusynessDTOs.add(new ZoneBusynessDTO(zone, 0));
+        // to integrate with the ML model
+        double[] busynesses = new double[zones.size()];
+        for (int i = 0; i < busynesses.length; i++) {
+            busynesses[i] = (i + 1);
         }
-        return zoneBusynessDTOs;
+        HashMap<Long, Double> zoneBusynessMap = new HashMap<>();
+        for (int i = 0; i < zones.size(); i++) {
+            zoneBusynessMap.put(zones.get(i).getZoneId(), busynesses[i]);
+        }
+        return zoneBusynessMap;
     }
 }

@@ -1,8 +1,7 @@
 package team8.comp47360_team8_backend.service;
 
-import team8.comp47360_team8_backend.dto.ZoneBusynessDTO;
-
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -12,5 +11,5 @@ import java.util.List;
  * @Description :
  */
 public interface ZoneService {
-    List<ZoneBusynessDTO> predictZoneBusyness(LocalDateTime dateTime);
+    HashMap<Long, Double> predictZoneBusyness(LocalDateTime dateTime);
 }
