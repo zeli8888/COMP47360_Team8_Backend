@@ -6,9 +6,7 @@ import team8.comp47360_team8_backend.model.Zone;
 import team8.comp47360_team8_backend.repository.ZoneRepository;
 import team8.comp47360_team8_backend.service.ZoneService;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.List;
 
@@ -25,7 +23,7 @@ public class ZoneServiceImpl implements ZoneService {
     private ZoneRepository zoneRepository;
 
     @Override
-    public HashMap<Long, Double> predictZoneBusyness(LocalDateTime dateTime) {
+    public HashMap<Long, Double> predictZoneBusyness(ZonedDateTime dateTime) {
         List<Zone> zones = zoneRepository.findAllByOrderByZoneIdAsc();
         // to integrate with the ML model
         double[] busynesses = new double[zones.size()];

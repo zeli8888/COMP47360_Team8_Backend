@@ -3,16 +3,30 @@
 #### Please check database setting in 
 - src/main/resources/application.properties.
 
-#### The default database name for this application is sunshareapp
+#### The default database name for this application is comp47360
 --------------------
 ### To start the application in development mode, please run
 - mvn clean package
 - mvn spring-boot:run
 -------------------------
 ### Check API by starting this application and open
-### http://localhost:8081/swagger-ui/index.html
+### http://localhost:8080/swagger-ui/index.html
 ---------------
-### Login api is POST request to http://localhost:8081/login 
+### Example API with Postman
+![img.png](docs/api-example-poitype.png)
+![api-example-poi.png](docs/api-example-poi.png)
+![api-example-register.png](docs/api-example-register.png)
+![api-example-login.png](docs/api-example-login.png)
+#### user plan api needs to be authenticated, user has to log in first and cannot access other users' plan
+![api-example-userplan-post.png](docs/api-example-userplan-post.png)
+![api-example-userplan-delete.png](docs/api-example-userplan-delete.png)
+![api-example-userplan-update.png](docs/api-example-userplan-update.png)
+![api-example-userplan-get-userid.png](docs/api-example-userplan-get-userid.png)
+![api-example-userplan-get-username.png](docs/api-example-userplan-get-username.png)
+### Login api is POST request to http://localhost:8080/login 
+
 ### with form data: 
-- #### **"username"** as key, **email** as value 
+
+- #### **"username"** as key, **username or email** as value 
+
 - #### **"password"** as key, password as value

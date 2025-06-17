@@ -1,8 +1,7 @@
 package team8.comp47360_team8_backend.service;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.HashMap;
-import java.util.List;
 
 /**
  * @Author : Ze Li
@@ -11,5 +10,5 @@ import java.util.List;
  * @Description :
  */
 public interface ZoneService {
-    HashMap<Long, Double> predictZoneBusyness(LocalDateTime dateTime);
+    HashMap<Long, Double> predictZoneBusyness(ZonedDateTime dateTime);
 }

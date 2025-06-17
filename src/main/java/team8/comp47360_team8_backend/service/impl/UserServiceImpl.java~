@@ -1,0 +1,122 @@
+package team8.comp47360_team8_backend.service.impl;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import team8.comp47360_team8_backend.exception.EmailAlreadyExistException;
+import team8.comp47360_team8_backend.exception.UserAlreadyExistException;
+import team8.comp47360_team8_backend.model.User;
+import team8.comp47360_team8_backend.repository.UserRepository;
+import team8.comp47360_team8_backend.security.CustomUserDetails;
+import team8.comp47360_team8_backend.service.UserService;
+
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+/**
+ * @Author : Ze Li
+ * @Date : 17/06/2025 18:02
+ * @Version : V1.0
+ * @Description :
+ */
+@Service
+public class UserServiceImpl implements UserService, UserDetailsService {
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Override
+    public UserDetails loadUserByUsername(String userName) throws UsernameNotFoundException {
+        Optional<User> opt = userRepository.findByUserName(userName);
+
+        if (!opt.isPresent()) {
+            opt = userRepository.findByEmail(userName);
+        }
+
+        if(!opt.isPresent())
+            throw new UsernameNotFoundException("User not exist !");
+        else {
+            User user = opt.get();
+            Set<SimpleGrantedAuthority> authorities = new HashSet<>();
+            // Add a default role directly without the ROLE_ prefix
+            authorities.add(new SimpleGrantedAuthority("ROLE_USER")); // replace "USER" with your actual default role
+            return new CustomUserDetails(
+                    user.getUserName(),
+                    user.getPassword(),
+                    user.getId(),
+                    authorities
+            );
+        }
+    }
+
+    @Override
+    public User createUser(User user) {
+        String email = user.getEmail();
+        String userName = user.getUserName();
+        if (email == null && userName == null) throw new UsernameNotFoundException("User email and user name cannot both be null");
+        if (email != null && !isValidEmail(email)){
+            throw new UsernameNotFoundException("User email invalid: " + email);
+        }
+        if (userName != null && !isValidUsername(userName)){
+            throw new UsernameNotFoundException("User name invalid: " + userName);
+        }
+        if (email != null && userRepository.findByEmail(email).isPresent()){
+            throw new EmailAlreadyExistException(email);
+        }
+        if (userRepository.findByUserName(userName).isPresent()){
+            throw new UserAlreadyExistException(userName);
+        }
+        String passwd= user.getPassword();
+        if (passwd == null){
+            throw new UsernameNotFoundException("User password cannot be null");
+        }
+        String encodedPassword = passwordEncoder.encode(passwd);
+        if (user.getUserName() == null){
+            user.setUserName(generateDistinctUsername());
+        }
+        user.setPassword(encodedPassword);
+        user.setId(null);
+        user = userRepository.save(user);
+        return user;
+    }
+
+    @Override
+    public User updateUser(User user, String userEmail) {
+        return null;
+    }
+
+    private boolean isValidEmail(String email) {
+        String emailRegex = "^((?!\\.)[\\w\\-_.]*[^.])(@\\w+)(\\.\\w+(\\.\\w+)?[^.\\W])$";
+        Pattern pattern = Pattern.compile(emailRegex);
+        Matcher matcher = pattern.matcher(email);
+        return matcher.matches();
+    }
+
+    private boolean isValidUsername(String username) {
+        // This example allows alphanumeric characters, underscores, and hyphens, with a length between 3 and 16 characters
+        String usernameRegex = "^[a-zA-Z0-9_-]{3,16}$";
+        Pattern pattern = Pattern.compile(usernameRegex);
+        Matcher matcher = pattern.matcher(username);
+        return matcher.matches();
+    }
+
+    private String generateDistinctUsername(){
+        String username;
+        do {
+            // allowed number of distinct username: 16**8 = 4,294,967,296
+            username = "user_" + UUID.randomUUID().toString().substring(0, 8);
+        } while (userRepository.findByUserName(username).isPresent());
+        return username;
+    }
+
+}

@@ -7,14 +7,13 @@ import java.io.Serial;
 
 /**
  * @Author : Ze Li
- * @Date : 02/06/2025 22:19
+ * @Date : 17/06/2025 21:25
  * @Version : V1.0
  * @Description :
  */
 @ResponseStatus(HttpStatus.NOT_FOUND)
-public class POITypeNotFoundException extends RuntimeException {
-
-    public POITypeNotFoundException(String poiTypeName) {
-        super("POI type not found : " + poiTypeName);
+public class UserPlanNotFoundException extends RuntimeException {
+    public UserPlanNotFoundException(long userPlanId) {
+        super("User plan not found : " + userPlanId);
     }
 }

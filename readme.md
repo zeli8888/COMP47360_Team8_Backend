@@ -12,11 +12,22 @@
 ### Check API by starting this application and open
 ### http://localhost:8080/swagger-ui/index.html
 ---------------
+### Example API with Postman
+![img.png](docs/api-example-poitype.png)
+![api-example-poi.png](docs/api-example-poi.png)
+![api-example-register.png](docs/api-example-register.png)
+![api-example-login.png](docs/api-example-login.png)
+#### user plan api needs to be authenticated, user has to log in first and cannot access other users' plan
+![api-example-userplan-post.png](docs/api-example-userplan-post.png)
+![api-example-userplan-get-userid.png](docs/api-example-userplan-get-userid.png)
+![api-example-userplan-get-username.png](docs/api-example-userplan-get-username.png)
+![api-example-userplan-update.png](docs/api-example-userplan-update.png)
+![api-example-userplan-delete.png](docs/api-example-userplan-delete.png)
 
-[//]: # (### Login api is POST request to http://localhost:8080/login )
+### Login api is POST request to http://localhost:8080/login 
 
-[//]: # (### with form data: )
+### with form data: 
 
-[//]: # (- #### **"username"** as key, **email** as value )
+- #### **"username"** as key, **username or email** as value 
 
-[//]: # (- #### **"password"** as key, password as value)
+- #### **"password"** as key, password as value

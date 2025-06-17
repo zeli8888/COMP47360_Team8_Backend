@@ -13,9 +13,6 @@ import java.io.Serial;
  */
 @ResponseStatus(HttpStatus.NOT_FOUND)
 public class POITypeNotFoundException extends RuntimeException {
-    @Serial
-    private static final long serialVersionUID = 179856888745840942L;
-
     public POITypeNotFoundException(String poiTypeName) {
         super("POI type not found : " + poiTypeName);
     }
