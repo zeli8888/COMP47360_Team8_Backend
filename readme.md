@@ -31,3 +31,11 @@
 - #### **"username"** as key, **username or email** as value 
 
 - #### **"password"** as key, password as value
+---------------------
+### Testing
+- Please check the testing folder src/test/java/team8/comp47360_team8_backend
+- For unit testing, there are test cases for controller, service
+- If you want to contribute, please create a new branch and push to github. After you finish, please message me to avoid duplicate work.
+- I have done POIControllerTest and ZoneServiceTest, you can check them for reference.
+- We will implement integration testing in the future.
+- This is not mandatory, so only do it when you have free time.

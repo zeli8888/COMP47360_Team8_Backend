@@ -9,7 +9,7 @@ import team8.comp47360_team8_backend.model.POI;
 import team8.comp47360_team8_backend.service.POIService;
 import team8.comp47360_team8_backend.service.ZoneService;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.List;
 
@@ -29,9 +29,9 @@ public class POIController {
     @Autowired
     private ZoneService zoneService;
 
-    @GetMapping("/pois")
+    @PostMapping("/pois")
     public ResponseEntity<List<POIBusynessDistanceDTO>> getPOIsByPOITypeName(@RequestBody POI lastPOI, @RequestParam(required = true) String poiTypeName,
-                                                                             @RequestParam(required = true) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateTime) {
+                                                                             @RequestParam(required = true) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime dateTime) {
         HashMap<Long, Double> zoneBusynessMap = zoneService.predictZoneBusyness(dateTime);
         List<POIBusynessDistanceDTO> poiBusynessDistanceDTOS = poiService.assignBusynessDistanceForPOIs(poiService.getPOIsByPOITypeName(poiTypeName), lastPOI, zoneBusynessMap);
         return ResponseEntity.ok(poiBusynessDistanceDTOS);

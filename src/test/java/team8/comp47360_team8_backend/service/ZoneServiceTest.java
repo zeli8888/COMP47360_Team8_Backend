@@ -1,0 +1,57 @@
+package team8.comp47360_team8_backend.service;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+import team8.comp47360_team8_backend.model.Zone;
+import team8.comp47360_team8_backend.repository.ZoneRepository;
+import team8.comp47360_team8_backend.service.impl.ZoneServiceImpl;
+
+import java.time.ZonedDateTime;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
+
+/**
+ * @Author : Ze Li
+ * @Date : 19/06/2025 15:04
+ * @Version : V1.0
+ * @Description :
+ */
+@ExtendWith(SpringExtension.class)
+class ZoneServiceTest {
+    @Mock
+    private ZoneRepository zoneRepository;
+
+    @InjectMocks
+    private ZoneService zoneService = new ZoneServiceImpl();
+
+    @Test
+    void predictZoneBusyness() {
+        // Arrange
+        ZonedDateTime dateTime = ZonedDateTime.now();
+        List<Zone> zones = Arrays.asList(
+                new Zone(1L, "Zone1", 1L),
+                new Zone(2L, "Zone2", 2L),
+                new Zone(3L, "Zone3", 3L));
+        when(zoneRepository.findAllByOrderByZoneIdAsc()).thenReturn(zones);
+
+        // Act
+        HashMap<Long, Double> result = zoneService.predictZoneBusyness(dateTime);
+
+        // Assert
+        HashMap<Long, Double> expected = new HashMap<>();
+        expected.put(1L, 1.0);
+        expected.put(2L, 2.0);
+        expected.put(3L, 3.0);
+
+        assertEquals(expected, result);
+        verify(zoneRepository, times(1)).findAllByOrderByZoneIdAsc();
+    }
+}
