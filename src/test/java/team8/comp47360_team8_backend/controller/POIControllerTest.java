@@ -73,8 +73,8 @@ class POIControllerTest {
                 null, "lastPOI", "lastPOI description", 5.0, 5.0, null, null
         );
 
-        Zone zone1 = new Zone(1L, "Zone1", 1L);
-        Zone zone2 = new Zone(2L, "Zone2", 2L);
+        Zone zone1 = new Zone(1L, "Zone1");
+        Zone zone2 = new Zone(2L, "Zone2");
 
         HashMap<Long, Double> zoneBusynessMap = new HashMap<>();
         zoneBusynessMap.put(1L, 0.6);

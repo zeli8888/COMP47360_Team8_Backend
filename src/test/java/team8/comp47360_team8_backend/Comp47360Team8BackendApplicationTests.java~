@@ -23,7 +23,7 @@ class Comp47360Team8BackendApplicationTests {
 
     @Test
     @Transactional
-    @Rollback(value = true)
+    @Rollback(false)
     void initTestData() {
         POIType park = new POIType(null, "park", new HashSet<>());
         POIType restaurant = new POIType(null, "restaurant", new HashSet<>());

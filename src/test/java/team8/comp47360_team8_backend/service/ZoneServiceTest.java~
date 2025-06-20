@@ -37,9 +37,9 @@ class ZoneServiceTest {
         // Arrange
         ZonedDateTime dateTime = ZonedDateTime.now();
         List<Zone> zones = Arrays.asList(
-                new Zone(1L, "Zone1"),
-                new Zone(2L, "Zone2"),
-                new Zone(3L, "Zone3"));
+                new Zone(1L, "Zone1", 1L),
+                new Zone(2L, "Zone2", 2L),
+                new Zone(3L, "Zone3", 3L));
         when(zoneRepository.findAllByOrderByZoneIdAsc()).thenReturn(zones);
 
         // Act

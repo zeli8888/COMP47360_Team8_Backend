@@ -1,0 +1,261 @@
+zone_id,zone_name
+1,newark airport
+2,jamaica bay
+3,allerton/pelham gardens
+4,alphabet city
+5,arden heights
+6,arrochar/fort wadsworth
+7,astoria
+8,astoria park
+9,auburndale
+10,baisley park
+11,bath beach
+12,battery park
+13,battery park city
+14,bay ridge
+15,bay terrace/fort totten
+16,bayside
+17,bedford
+18,bedford park
+19,bellerose
+20,belmont
+21,bensonhurst east
+22,bensonhurst west
+23,bloomfield/emerson hill
+24,bloomingdale
+25,boerum hill
+26,borough park
+27,breezy point/fort tilden/riis beach
+28,briarwood/jamaica hills
+29,brighton beach
+30,broad channel
+31,bronx park
+32,bronxdale
+33,brooklyn heights
+34,brooklyn navy yard
+35,brownsville
+36,bushwick north
+37,bushwick south
+38,cambria heights
+39,canarsie
+40,carroll gardens
+41,central harlem
+42,central harlem north
+43,central park
+44,charleston/tottenville
+45,chinatown
+46,city island
+47,claremont/bathgate
+48,clinton east
+49,clinton hill
+50,clinton west
+51,co-op city
+52,cobble hill
+53,college point
+54,columbia street
+55,coney island
+56,corona
+58,country club
+59,crotona park
+60,crotona park east
+61,crown heights north
+62,crown heights south
+63,cypress hills
+64,douglaston
+65,downtown brooklyn/metrotech
+66,dumbo/vinegar hill
+67,dyker heights
+68,east chelsea
+69,east concourse/concourse village
+70,east elmhurst
+71,east flatbush/farragut
+72,east flatbush/remsen village
+73,east flushing
+74,east harlem north
+75,east harlem south
+76,east new york
+77,east new york/pennsylvania avenue
+78,east tremont
+79,east village
+80,east williamsburg
+81,eastchester
+82,elmhurst
+83,elmhurst/maspeth
+84,eltingville/annadale/prince's bay
+85,erasmus
+86,far rockaway
+87,financial district north
+88,financial district south
+89,flatbush/ditmas park
+90,flatiron
+91,flatlands
+92,flushing
+93,flushing meadows-corona park
+94,fordham south
+95,forest hills
+96,forest park/highland park
+97,fort greene
+98,fresh meadows
+99,freshkills park
+100,garment district
+101,glen oaks
+102,glendale
+103,governor's island/ellis island/liberty island
+106,gowanus
+107,gramercy
+108,gravesend
+109,great kills
+110,great kills park
+111,green-wood cemetery
+112,greenpoint
+113,greenwich village north
+114,greenwich village south
+115,grymes hill/clifton
+116,hamilton heights
+117,hammels/arverne
+118,heartland village/todt hill
+119,highbridge
+120,highbridge park
+121,hillcrest/pomonok
+122,hollis
+123,homecrest
+124,howard beach
+125,hudson sq
+126,hunts point
+127,inwood
+128,inwood hill park
+129,jackson heights
+130,jamaica
+131,jamaica estates
+132,jfk airport
+133,kensington
+134,kew gardens
+135,kew gardens hills
+136,kingsbridge heights
+137,kips bay
+138,laguardia airport
+139,laurelton
+140,lenox hill east
+141,lenox hill west
+142,lincoln square east
+143,lincoln square west
+144,little italy/nolita
+145,long island city/hunters point
+146,long island city/queens plaza
+147,longwood
+148,lower east side
+149,madison
+150,manhattan beach
+151,manhattan valley
+152,manhattanville
+153,marble hill
+154,marine park/floyd bennett field
+155,marine park/mill basin
+156,mariners harbor
+157,maspeth
+158,meatpacking/west village west
+159,melrose south
+160,middle village
+161,midtown center
+162,midtown east
+163,midtown north
+164,midtown south
+165,midwood
+166,morningside heights
+167,morrisania/melrose
+168,mott haven/port morris
+169,mount hope
+170,murray hill
+171,murray hill-queens
+172,new dorp/midland beach
+173,north corona
+174,norwood
+175,oakland gardens
+176,oakwood
+177,ocean hill
+178,ocean parkway south
+179,old astoria
+180,ozone park
+181,park slope
+182,parkchester
+183,pelham bay
+184,pelham bay park
+185,pelham parkway
+186,penn station/madison sq west
+187,port richmond
+188,prospect-lefferts gardens
+189,prospect heights
+190,prospect park
+191,queens village
+192,queensboro hill
+193,queensbridge/ravenswood
+194,randalls island
+195,red hook
+196,rego park
+197,richmond hill
+198,ridgewood
+199,rikers island
+200,riverdale/north riverdale/fieldston
+201,rockaway park
+202,roosevelt island
+203,rosedale
+204,rossville/woodrow
+205,saint albans
+206,saint george/new brighton
+207,saint michaels cemetery/woodside
+208,schuylerville/edgewater park
+209,seaport
+210,sheepshead bay
+211,soho
+212,soundview/bruckner
+213,soundview/castle hill
+214,south beach/dongan hills
+215,south jamaica
+216,south ozone park
+217,south williamsburg
+218,springfield gardens north
+219,springfield gardens south
+220,spuyten duyvil/kingsbridge
+221,stapleton
+222,starrett city
+223,steinway
+224,stuy town/peter cooper village
+225,stuyvesant heights
+226,sunnyside
+227,sunset park east
+228,sunset park west
+229,sutton place/turtle bay north
+230,times sq/theatre district
+231,tribeca/civic center
+232,two bridges/seward park
+233,un/turtle bay south
+234,union sq
+235,university heights/morris heights
+236,upper east side north
+237,upper east side south
+238,upper west side north
+239,upper west side south
+240,van cortlandt park
+241,van cortlandt village
+242,van nest/morris park
+243,washington heights north
+244,washington heights south
+245,west brighton
+246,west chelsea/hudson yards
+247,west concourse
+248,west farms/bronx river
+249,west village
+250,westchester village/unionport
+251,westerleigh
+252,whitestone
+253,willets point
+254,williamsbridge/olinville
+255,williamsburg (north side)
+256,williamsburg (south side)
+257,windsor terrace
+258,woodhaven
+259,woodlawn/wakefield
+260,woodside
+261,world trade center
+262,yorkville east
+263,yorkville west

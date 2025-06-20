@@ -18,7 +18,7 @@ public class POI {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long poiId;
 
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false)
     private String poiName;
 
     private String poiDescription;

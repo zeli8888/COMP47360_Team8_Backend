@@ -16,12 +16,15 @@ public class Zone {
     @Column(unique = true, nullable = false)
     private String zoneName;
 
+    private Long numPOI;
+
     public Zone() {
     }
 
-    public Zone(long zoneId, String zoneName) {
+    public Zone(long zoneId, String zoneName, Long numPOI) {
         this.zoneId = zoneId;
         this.zoneName = zoneName;
+        this.numPOI = numPOI;
     }
 
     public long getZoneId() {
@@ -40,4 +43,11 @@ public class Zone {
         this.zoneName = zoneName;
     }
 
+    public Long getNumPOI() {
+        return numPOI;
+    }
+
+    public void setNumPOI(Long numPOI) {
+        this.numPOI = numPOI;
+    }
 }
