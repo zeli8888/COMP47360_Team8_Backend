@@ -1,6 +1,6 @@
 package team8.comp47360_team8_backend.service;
 
-import team8.comp47360_team8_backend.dto.POIBusynessDistanceDTO;
+import team8.comp47360_team8_backend.dto.POIBusynessDistanceRecommendationDTO;
 import team8.comp47360_team8_backend.model.POI;
 
 import java.util.HashMap;
@@ -15,5 +15,5 @@ import java.util.Set;
  */
 public interface POIService {
     Set<POI> getPOIsByPOITypeName(String poiTypeName);
-    List<POIBusynessDistanceDTO> assignBusynessDistanceForPOIs(Set<POI> pois, POI lastPOI, HashMap<Long, Double> zoneBusynessMap);
+    List<POIBusynessDistanceRecommendationDTO> assignBusynessDistanceForPOIs(Set<POI> pois, POI lastPOI, HashMap<Long, String> zoneBusynessMap, String transitType);
 }

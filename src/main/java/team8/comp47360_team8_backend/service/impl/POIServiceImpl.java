@@ -2,7 +2,7 @@ package team8.comp47360_team8_backend.service.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import team8.comp47360_team8_backend.dto.POIBusynessDistanceDTO;
+import team8.comp47360_team8_backend.dto.POIBusynessDistanceRecommendationDTO;
 import team8.comp47360_team8_backend.exception.POITypeNotFoundException;
 import team8.comp47360_team8_backend.model.POI;
 import team8.comp47360_team8_backend.model.POIType;
@@ -23,6 +23,14 @@ public class POIServiceImpl implements POIService {
     @Autowired
     private POITypeRepository poiTypeRepository;
 
+    // Adjust busyness levels to numeric values
+    public static final Map<String, Integer> BUSYNESS_MAP = Map.of(
+            "low", 10,
+            "medium", 5,
+            "high", 1
+    );
+    public static final double CLOSEST_DISTANCE_SCORE = 10;
+
     @Override
     public Set<POI> getPOIsByPOITypeName(String poiTypeName) {
         POIType poiType = poiTypeRepository.getByPoiTypeName(poiTypeName).orElseThrow(() -> new POITypeNotFoundException(poiTypeName));
@@ -30,17 +38,41 @@ public class POIServiceImpl implements POIService {
     }
 
     @Override
-    public List<POIBusynessDistanceDTO> assignBusynessDistanceForPOIs(Set<POI> pois, POI lastPOI, HashMap<Long, Double> zoneBusynessMap) {
-        ArrayList<POIBusynessDistanceDTO> poiBusynessDistanceDTOs = new ArrayList<>(pois.size());
+    public List<POIBusynessDistanceRecommendationDTO> assignBusynessDistanceForPOIs(Set<POI> pois, POI lastPOI, HashMap<Long, String> zoneBusynessMap, String transitType) {
+
+        // distance = 1, math.exp(-1/2)=0.61
+        final double distanceScoreDecayFactor;
+        if (transitType == null) {
+            distanceScoreDecayFactor = 2;
+        } else if (transitType.equals("cycle") || transitType.equals("bus")) {
+            distanceScoreDecayFactor = 4;
+        } else if (transitType.equals("car")) {
+            distanceScoreDecayFactor = 8;
+        } else {
+            // walk as default
+            distanceScoreDecayFactor = 2;
+        }
+
+        ArrayList<POIBusynessDistanceRecommendationDTO> poiBusynessDistanceRecommendationDTOS = new ArrayList<>(pois.size());
         for (POI poi : pois) {
-            poiBusynessDistanceDTOs.add(
-                    new POIBusynessDistanceDTO(poi,
-                    zoneBusynessMap.get(poi.getZone().getZoneId()),
-                    calculateDistance(lastPOI, poi))
+            String busyness = zoneBusynessMap.get(poi.getZone().getZoneId());
+            double distance = calculateDistance(lastPOI, poi);
+            poiBusynessDistanceRecommendationDTOS.add(
+                    new POIBusynessDistanceRecommendationDTO(poi, busyness, distance, calculateRecommendation(busyness, distance, distanceScoreDecayFactor))
             );
         }
-        poiBusynessDistanceDTOs.sort(Comparator.comparingDouble(POIBusynessDistanceDTO::getBusyness));
-        return poiBusynessDistanceDTOs;
+        poiBusynessDistanceRecommendationDTOS.sort(Comparator.comparingDouble(POIBusynessDistanceRecommendationDTO::getRecommendation));
+
+        // To avoid returning too many useless POIs, we only return the first 1000 most recommendations.
+        return poiBusynessDistanceRecommendationDTOS.subList(0, Math.min(1000, poiBusynessDistanceRecommendationDTOS.size()));
+    }
+
+
+    public double calculateRecommendation(String busyness, double distance, double distanceScoreDecayFactor) {
+        double busynessScore = BUSYNESS_MAP.get(busyness);
+        // Exponential decay formula for distanceScore
+        double distanceScore = CLOSEST_DISTANCE_SCORE * Math.exp(-distance / distanceScoreDecayFactor);
+        return busynessScore/2 + distanceScore/2;
     }
 
     public double calculateDistance(POI poi1, POI poi2) {

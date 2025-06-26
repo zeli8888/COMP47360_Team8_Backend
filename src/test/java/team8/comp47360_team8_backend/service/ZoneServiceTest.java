@@ -43,13 +43,13 @@ class ZoneServiceTest {
         when(zoneRepository.findAllByOrderByZoneIdAsc()).thenReturn(zones);
 
         // Act
-        HashMap<Long, Double> result = zoneService.predictZoneBusyness(dateTime);
+        HashMap<Long, String> result = zoneService.predictZoneBusyness(dateTime);
 
         // Assert
-        HashMap<Long, Double> expected = new HashMap<>();
-        expected.put(1L, 1.0);
-        expected.put(2L, 2.0);
-        expected.put(3L, 3.0);
+        HashMap<Long, String> expected = new HashMap<>();
+        expected.put(1L, "low");
+        expected.put(2L, "medium");
+        expected.put(3L, "high");
 
         assertEquals(expected, result);
         verify(zoneRepository, times(1)).findAllByOrderByZoneIdAsc();

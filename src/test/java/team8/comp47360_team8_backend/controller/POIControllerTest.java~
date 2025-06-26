@@ -98,7 +98,7 @@ class POIControllerTest {
         MvcResult mvcResult = mockMvc.perform(requestBuilder).andReturn();
         verify(zoneService, times(1)).predictZoneBusyness(ZonedDateTime.parse(dateTimeString));
         verify(poiService, times(1)).getPOIsByPOITypeName(poiTypeName);
-        verify(poiService, times(1)).assignBusynessDistanceForPOIs(any(), any(), eq(zoneBusynessMap), eq("car"));
+        verify(poiService, times(1)).assignBusynessDistanceForPOIs(any(), any(), eq(zoneBusynessMap), "car");
         JSONAssert.assertEquals(om.writeValueAsString(expectedResponse), mvcResult.getResponse().getContentAsString(), false);
     }
 }

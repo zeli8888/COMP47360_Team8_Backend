@@ -14,8 +14,6 @@ import team8.comp47360_team8_backend.security.CustomUserDetails;
 import team8.comp47360_team8_backend.service.UserPlanService;
 
 import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 
 /**
  * @Author : Ze Li

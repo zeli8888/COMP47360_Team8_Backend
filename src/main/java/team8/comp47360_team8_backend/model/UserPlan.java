@@ -18,13 +18,11 @@ public class UserPlan {
     @GeneratedValue
     private Long userPlanId;
 
-    @Column(nullable = false)
     private String poiName;
 
     @Column(nullable = false)
     private ZonedDateTime time;
 
-    @Column(nullable = false)
     private Double busyness;
 
     @Column(nullable = false)

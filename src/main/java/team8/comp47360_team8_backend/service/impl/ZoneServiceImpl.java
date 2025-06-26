@@ -23,14 +23,15 @@ public class ZoneServiceImpl implements ZoneService {
     private ZoneRepository zoneRepository;
 
     @Override
-    public HashMap<Long, Double> predictZoneBusyness(ZonedDateTime dateTime) {
+    public HashMap<Long, String> predictZoneBusyness(ZonedDateTime dateTime) {
         List<Zone> zones = zoneRepository.findAllByOrderByZoneIdAsc();
         // to integrate with the ML model
-        double[] busynesses = new double[zones.size()];
+        String[] busynesses = new String[zones.size()];
+        String[] busynessLevel = {"low", "medium", "high"};
         for (int i = 0; i < busynesses.length; i++) {
-            busynesses[i] = (i + 1);
+            busynesses[i] = busynessLevel[i%3];
         }
-        HashMap<Long, Double> zoneBusynessMap = new HashMap<>();
+        HashMap<Long, String> zoneBusynessMap = new HashMap<>();
         for (int i = 0; i < zones.size(); i++) {
             zoneBusynessMap.put(zones.get(i).getZoneId(), busynesses[i]);
         }

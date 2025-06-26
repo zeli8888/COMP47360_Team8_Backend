@@ -10,5 +10,5 @@ import java.util.HashMap;
  * @Description :
  */
 public interface ZoneService {
-    HashMap<Long, Double> predictZoneBusyness(ZonedDateTime dateTime);
+    HashMap<Long, String> predictZoneBusyness(ZonedDateTime dateTime);
 }

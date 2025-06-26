@@ -8,18 +8,28 @@ import team8.comp47360_team8_backend.model.POI;
  * @Version : V1.0
  * @Description :
  */
-public class POIBusynessDistanceDTO {
+public class POIBusynessDistanceRecommendationDTO {
     private POI poi;
-    private double busyness;
+    private String busyness;
     private double distance;
+    private double recommendation;
 
-    public POIBusynessDistanceDTO() {
+    public POIBusynessDistanceRecommendationDTO() {
     }
 
-    public POIBusynessDistanceDTO(POI poi, double busyness, double distance) {
+    public POIBusynessDistanceRecommendationDTO(POI poi, String busyness, double distance, double recommendation) {
         this.poi = poi;
         this.busyness = busyness;
         this.distance = distance;
+        this.recommendation = recommendation;
+    }
+
+    public double getRecommendation() {
+        return recommendation;
+    }
+
+    public void setRecommendation(double recommendation) {
+        this.recommendation = recommendation;
     }
 
     public POI getPoi() {
@@ -30,11 +40,11 @@ public class POIBusynessDistanceDTO {
         this.poi = poi;
     }
 
-    public double getBusyness() {
+    public String getBusyness() {
         return busyness;
     }
 
-    public void setBusyness(double busyness) {
+    public void setBusyness(String busyness) {
         this.busyness = busyness;
     }
 
