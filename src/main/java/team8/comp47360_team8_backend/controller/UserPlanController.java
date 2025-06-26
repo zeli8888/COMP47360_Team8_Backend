@@ -20,17 +20,8 @@ public class UserPlanController {
     private UserPlanService userPlanService;
 
     @GetMapping("/userplans")
-    public ResponseEntity<List<UserPlan>> getUserPlans(
-            @RequestParam(required = false) Long userId,
-            @RequestParam(required = false) String userName) {
-
-        if (userId != null) {
-            return ResponseEntity.ok(userPlanService.getUserPlans(userId));
-        } else if (userName != null) {
-            return ResponseEntity.ok(userPlanService.getUserPlans(userName));
-        } else {
-            return ResponseEntity.badRequest().body(null);
-        }
+    public ResponseEntity<List<UserPlan>> getUserPlans() {
+        return ResponseEntity.ok(userPlanService.getUserPlans());
     }
 
     @PostMapping("/userplans")

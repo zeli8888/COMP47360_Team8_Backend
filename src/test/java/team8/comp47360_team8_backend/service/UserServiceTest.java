@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @Author : Ze Li
- * @Date : 19/06/2025 15:04
+ * @Date : 25/06/2025 23:33
  * @Version : V1.0
  * @Description :
  */
@@ -18,5 +18,13 @@ class UserServiceTest {
 
     @Test
     void updateUser() {
+    }
+
+    @Test
+    void getUser() {
+    }
+
+    @Test
+    void deleteUser() {
     }
 }

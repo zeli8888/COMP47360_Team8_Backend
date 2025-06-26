@@ -11,8 +11,7 @@ import java.util.List;
  * @Description :
  */
 public interface UserPlanService {
-    List<UserPlan> getUserPlans(long userId);
-    List<UserPlan> getUserPlans(String userName);
+    List<UserPlan> getUserPlans();
     void deleteUserPlan(long userPlanId);
     UserPlan createUserPlan(UserPlan userPlan);
     UserPlan updateUserPlan(long userPlanId, UserPlan userPlan);

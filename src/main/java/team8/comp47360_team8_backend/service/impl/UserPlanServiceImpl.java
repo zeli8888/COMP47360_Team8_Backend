@@ -32,19 +32,8 @@ public class UserPlanServiceImpl implements UserPlanService {
     private UserRepository userRepository;
 
     @Override
-    public List<UserPlan> getUserPlans(long userId) {
-        if (getAuthenticatedUser().getUserId() != userId) {
-            throw new UnauthorizedAccessException("Access denied for accessing user with id: " + userId);
-        }
-        return userPlanRepository.findByUserId(userId);
-    }
-
-    @Override
-    public List<UserPlan> getUserPlans(String userName) {
-        if (!Objects.equals(getAuthenticatedUser().getUsername(), userName)) {
-            throw new UnauthorizedAccessException("Access denied for accessing user with name: " + userName);
-        }
-        return userPlanRepository.findByUserUserName(userName);
+    public List<UserPlan> getUserPlans() {
+        return userPlanRepository.findByUserId(getAuthenticatedUser().getUserId());
     }
 
     @Override

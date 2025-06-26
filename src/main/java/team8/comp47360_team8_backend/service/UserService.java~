@@ -9,8 +9,7 @@ import team8.comp47360_team8_backend.model.User;
  * @Description :
  */
 public interface UserService {
-    User createUser(User user);
-    User updateUser(User user);
-    User getUser();
-    void deleteUser();
+    public User createUser(User user);
+    public User updateUser(User user);
+    public User getUser();
 }

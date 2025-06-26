@@ -58,14 +58,21 @@ public class SpringSecurityConfiguration {
                         .requestMatchers(HttpMethod.POST, "/login").permitAll()
                         .requestMatchers("/poitypes/**").permitAll()
                         .requestMatchers("/pois/**").permitAll()
-                        .requestMatchers("/users/**").authenticated()
+                        .requestMatchers("/user/**").authenticated()
                         .requestMatchers("/userplans/**").authenticated()
                         .anyRequest().permitAll()
         );
 
-        http.formLogin(formLogin -> formLogin.loginPage("/login")
+        http.formLogin(formLogin -> formLogin
+//                .loginPage("/login")
                 .successHandler((request, response, authentication) -> {response.setStatus(HttpServletResponse.SC_OK);})
                 .failureHandler((request, response, exception) -> {response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);})
+        );
+
+        http.logout(logout -> logout
+                .logoutUrl("/logout") // URL to trigger logout
+                .invalidateHttpSession(true) // Invalidate the session
+                .deleteCookies("JSESSIONID") // Delete the session cookie
         );
 
         http.authenticationProvider(authenticationProvider);

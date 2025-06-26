@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @Author : Ze Li
- * @Date : 19/06/2025 15:03
+ * @Date : 25/06/2025 23:33
  * @Version : V1.0
  * @Description :
  */
@@ -14,10 +14,6 @@ class UserPlanServiceTest {
 
     @Test
     void getUserPlans() {
-    }
-
-    @Test
-    void testGetUserPlans() {
     }
 
     @Test

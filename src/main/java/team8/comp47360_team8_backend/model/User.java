@@ -1,5 +1,6 @@
 package team8.comp47360_team8_backend.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.util.HashSet;
@@ -17,6 +18,7 @@ public class User {
     @Id
     @GeneratedValue
     @Column(name="user_id")
+    @JsonIgnore
     private Long id;
 
     @Column(name="user_passwd")
@@ -32,6 +34,7 @@ public class User {
             CascadeType.REMOVE,
             CascadeType.REFRESH
     }, orphanRemoval = false)
+    @JsonIgnore
     private Set<UserPlan> userPlans = new HashSet<>();
 
     public User() {

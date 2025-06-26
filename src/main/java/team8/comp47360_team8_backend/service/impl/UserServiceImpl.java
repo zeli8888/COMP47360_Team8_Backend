@@ -1,8 +1,10 @@
 package team8.comp47360_team8_backend.service.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -92,8 +94,41 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     }
 
     @Override
-    public User updateUser(User user, String userEmail) {
-        return null;
+    public User updateUser(User user) {
+        User storedUser = getUserFromAuthentication();
+        if (user.getUserName() != null) {
+            if (isValidUsername(user.getUserName())) {
+                storedUser.setUserName(user.getUserName());
+            }
+        }
+        if (user.getEmail() != null) {
+            if (isValidEmail(user.getEmail())) {
+                storedUser.setEmail(user.getEmail());
+            }
+        }
+        if (user.getPassword() != null) {
+            String encodedPassword = passwordEncoder.encode(user.getPassword());
+            storedUser.setPassword(encodedPassword);
+        }
+        userRepository.save(storedUser);
+        return new User(null, null, storedUser.getEmail(), storedUser.getUserName(), null);
+    }
+
+    @Override
+    public User getUser() {
+        User user = getUserFromAuthentication();
+        return new User(null, null, user.getEmail(), user.getUserName(), null);
+    }
+
+    @Override
+    public void deleteUser() {
+        userRepository.delete(getUserFromAuthentication());
+    }
+
+    private User getUserFromAuthentication() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetail = (CustomUserDetails) authentication.getPrincipal();
+        return userRepository.findById(userDetail.getUserId()).orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 
     private boolean isValidEmail(String email) {
