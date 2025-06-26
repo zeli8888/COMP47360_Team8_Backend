@@ -12,5 +12,5 @@ import java.util.List;
  */
 public interface ZoneService {
     HashMap<Long, String> predictZoneBusyness(ZonedDateTime dateTime);
-    List<String> predictZoneBusyness(List<ZonedDateTime> dateTimeList, Long zoneId);
+    List<String> predictZoneBusyness(ZonedDateTime dateTime, Long zoneId);
 }

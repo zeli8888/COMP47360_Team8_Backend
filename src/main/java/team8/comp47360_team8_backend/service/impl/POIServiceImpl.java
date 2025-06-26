@@ -1,14 +1,20 @@
 package team8.comp47360_team8_backend.service.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 import team8.comp47360_team8_backend.dto.POIBusynessDistanceRecommendationDTO;
+import team8.comp47360_team8_backend.dto.RecommendationInputDTO;
 import team8.comp47360_team8_backend.exception.POITypeNotFoundException;
 import team8.comp47360_team8_backend.model.POI;
 import team8.comp47360_team8_backend.model.POIType;
+import team8.comp47360_team8_backend.model.UserPlan;
 import team8.comp47360_team8_backend.repository.POITypeRepository;
 import team8.comp47360_team8_backend.service.POIService;
+import team8.comp47360_team8_backend.service.ZoneService;
 
+import java.time.ZonedDateTime;
 import java.util.*;
 
 /**
@@ -22,6 +28,8 @@ import java.util.*;
 public class POIServiceImpl implements POIService {
     @Autowired
     private POITypeRepository poiTypeRepository;
+    @Autowired
+    private ZoneService zoneService;
 
     // Adjust busyness levels to numeric values
     public static final Map<String, Integer> BUSYNESS_MAP = Map.of(
@@ -38,7 +46,8 @@ public class POIServiceImpl implements POIService {
     }
 
     @Override
-    public List<POIBusynessDistanceRecommendationDTO> assignBusynessDistanceForPOIs(Set<POI> pois, POI lastPOI, HashMap<Long, String> zoneBusynessMap, String transitType) {
+    public List<POIBusynessDistanceRecommendationDTO> assignBusynessDistanceForPOIs(String poiTypeName, POI lastPOI, HashMap<Long, String> zoneBusynessMap, String transitType) {
+        Set<POI> pois = getPOIsByPOITypeName(poiTypeName);
 
         // distance = 1, math.exp(-1/2)=0.61
         final double distanceScoreDecayFactor;
@@ -63,8 +72,48 @@ public class POIServiceImpl implements POIService {
         }
         poiBusynessDistanceRecommendationDTOS.sort(Comparator.comparingDouble(POIBusynessDistanceRecommendationDTO::getRecommendation));
 
-        // To avoid returning too many useless POIs, we only return the first 1000 most recommendations.
-        return poiBusynessDistanceRecommendationDTOS.subList(0, Math.min(1000, poiBusynessDistanceRecommendationDTOS.size()));
+        return poiBusynessDistanceRecommendationDTOS;
+    }
+
+    @Override
+    public List<UserPlan> getListOfRecommendations(List<RecommendationInputDTO> recommendationInputDTOS) {
+        RecommendationInputDTO startLocation = recommendationInputDTOS.get(0);
+        if (startLocation.getLongitude() == null || startLocation.getLatitude() == null ||
+                startLocation.getZoneId() == null || startLocation.getTime() == null ||
+                startLocation.getPoiName() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Start location is not valid");
+        }
+        ArrayList<UserPlan> userPlans = new ArrayList<>(recommendationInputDTOS.size());
+        POI lastPOI = null;
+        for (RecommendationInputDTO recommendationInputDTO : recommendationInputDTOS) {
+            Double latitude = recommendationInputDTO.getLatitude();
+            Double longitude = recommendationInputDTO.getLongitude();
+            if (latitude != null && longitude != null) {
+                // a specific location user wants to go
+                String busyness = zoneService.predictZoneBusyness(Collections.singletonList(recommendationInputDTO.getTime()), recommendationInputDTO.getZoneId()).get(0);
+                userPlans.add(new UserPlan(recommendationInputDTO.getPoiName(), recommendationInputDTO.getTime(), busyness, latitude, longitude));
+                lastPOI = new POI(latitude, longitude);
+            } else {
+                // no specific location, needs to recommend
+                String poiTypeName = recommendationInputDTO.getPoiTypeName();
+                ZonedDateTime dateTime = recommendationInputDTO.getTime();
+                HashMap<Long, String> zoneBusynessMap = zoneService.predictZoneBusyness(dateTime);
+                // simple greedy algorithm, get the most recommended POI for each step based on predicted busyness and distance from last location
+                POIBusynessDistanceRecommendationDTO poiBusynessDistanceRecommendationDTO =
+                        assignBusynessDistanceForPOIs(poiTypeName,
+                                lastPOI,
+                                zoneBusynessMap,
+                                recommendationInputDTO.getTransitType()
+                        ).get(0);
+                lastPOI = poiBusynessDistanceRecommendationDTO.getPoi();
+                userPlans.add(new UserPlan(lastPOI.getPoiName(),
+                        dateTime,
+                        poiBusynessDistanceRecommendationDTO.getBusyness(),
+                        lastPOI.getLatitude(),
+                        lastPOI.getLongitude()));
+            }
+        }
+        return userPlans;
     }
 
 

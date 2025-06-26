@@ -50,6 +50,11 @@ public class POI {
     public POI() {
     }
 
+    public POI(double latitude, double longitude) {
+        this.latitude = latitude;
+        this.longitude = longitude;
+    }
+
     public POI(Long poiId, String poiName, String poiDescription, double latitude, double longitude, Zone zone, POIType poiType) {
         this.poiId = poiId;
         this.poiName = poiName;

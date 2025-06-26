@@ -23,7 +23,7 @@ public class UserPlan {
     @Column(nullable = false)
     private ZonedDateTime time;
 
-    private String busyness;
+    private Double busyness;
 
     @Column(nullable = false)
     private double latitude;
@@ -38,7 +38,7 @@ public class UserPlan {
     public UserPlan() {
     }
 
-    public UserPlan(String poiName, ZonedDateTime time, String busyness, double latitude, double longitude) {
+    public UserPlan(String poiName, ZonedDateTime time, Double busyness, double latitude, double longitude) {
         this.poiName = poiName;
         this.time = time;
         this.busyness = busyness;
@@ -46,7 +46,7 @@ public class UserPlan {
         this.longitude = longitude;
     }
 
-    public UserPlan(Long userPlanId, String poiName, ZonedDateTime time, String busyness, double latitude, double longitude, User user) {
+    public UserPlan(Long userPlanId, String poiName, ZonedDateTime time, Double busyness, double latitude, double longitude, User user) {
         this.userPlanId = userPlanId;
         this.poiName = poiName;
         this.time = time;
@@ -80,11 +80,11 @@ public class UserPlan {
         this.time = time;
     }
 
-    public String getBusyness() {
+    public Double getBusyness() {
         return busyness;
     }
 
-    public void setBusyness(String busyness) {
+    public void setBusyness(Double busyness) {
         this.busyness = busyness;
     }
 

@@ -1,0 +1,15 @@
+package team8.comp47360_team8_backend.controller;
+
+import org.junit.jupiter.api.Test;
+
+/**
+* @Author : Ze Li
+* @Date : 26/06/2025 22:02
+* @Version : V1.0
+* @Description :
+*/class ZoneControllerTest {
+
+    @Test
+    void getZoneBusyness() {
+    }
+}

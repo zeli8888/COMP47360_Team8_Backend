@@ -84,8 +84,7 @@ class POIControllerTest {
 
         // Mocking the POIService and ZoneService methods
         when(zoneService.predictZoneBusyness(ZonedDateTime.parse(dateTimeString))).thenReturn(zoneBusynessMap);
-        when(poiService.getPOIsByPOITypeName(poiTypeName)).thenReturn(Set.of(poi1, poi2));
-        when(poiService.assignBusynessDistanceForPOIs(any(), any(), eq(zoneBusynessMap), eq("car"))).thenReturn(poiBusynessDistanceRecommendationDTOS);
+        when(poiService.assignBusynessDistanceForPOIs(eq(poiTypeName), any(), eq(zoneBusynessMap), eq("car"))).thenReturn(poiBusynessDistanceRecommendationDTOS);
 
         // Act and Assert
         RequestBuilder requestBuilder = MockMvcRequestBuilders.get("/pois")
@@ -97,8 +96,11 @@ class POIControllerTest {
                 .accept(MediaType.APPLICATION_JSON);
         MvcResult mvcResult = mockMvc.perform(requestBuilder).andReturn();
         verify(zoneService, times(1)).predictZoneBusyness(ZonedDateTime.parse(dateTimeString));
-        verify(poiService, times(1)).getPOIsByPOITypeName(poiTypeName);
         verify(poiService, times(1)).assignBusynessDistanceForPOIs(any(), any(), eq(zoneBusynessMap), eq("car"));
         JSONAssert.assertEquals(om.writeValueAsString(expectedResponse), mvcResult.getResponse().getContentAsString(), false);
+    }
+
+    @Test
+    void getListOfRecommendations() {
     }
 }
