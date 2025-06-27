@@ -84,19 +84,20 @@ class POIControllerTest {
 
         // Mocking the POIService and ZoneService methods
         when(zoneService.predictZoneBusyness(ZonedDateTime.parse(dateTimeString))).thenReturn(zoneBusynessMap);
-        when(poiService.assignBusynessDistanceForPOIs(eq(poiTypeName), any(), eq(zoneBusynessMap), eq("car"))).thenReturn(poiBusynessDistanceRecommendationDTOS);
+        when(poiService.assignBusynessDistanceForPOIs(eq(poiTypeName), any(), eq(zoneBusynessMap), eq("car"), eq(1000))).thenReturn(poiBusynessDistanceRecommendationDTOS);
 
         // Act and Assert
         RequestBuilder requestBuilder = MockMvcRequestBuilders.get("/pois")
                 .param("poiTypeName", poiTypeName)
                 .param("transitType", transitType)
                 .param("dateTime", dateTimeString)
+                .param("limit", "1000")
                 .content(om.writeValueAsString(lastPOI))
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON);
         MvcResult mvcResult = mockMvc.perform(requestBuilder).andReturn();
         verify(zoneService, times(1)).predictZoneBusyness(ZonedDateTime.parse(dateTimeString));
-        verify(poiService, times(1)).assignBusynessDistanceForPOIs(any(), any(), eq(zoneBusynessMap), eq("car"));
+        verify(poiService, times(1)).assignBusynessDistanceForPOIs(any(), any(), eq(zoneBusynessMap), eq("car"), eq(1000));
         JSONAssert.assertEquals(om.writeValueAsString(expectedResponse), mvcResult.getResponse().getContentAsString(), false);
     }
 

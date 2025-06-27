@@ -70,15 +70,11 @@ public class POIServiceImpl implements POIService {
             POIBusynessDistanceRecommendationDTO poiBusynessDistanceRecommendationDTO = new POIBusynessDistanceRecommendationDTO(poi, busyness, distance, calculateRecommendation(busyness, distance, distanceScoreDecayFactor));
             poiBusynessDistanceRecommendationDTOHeap.add(poiBusynessDistanceRecommendationDTO);
             if (poiBusynessDistanceRecommendationDTOHeap.size() > limit) {
-                // remove the lowest recommendation
                 poiBusynessDistanceRecommendationDTOHeap.poll();
             }
         }
 
-        List<POIBusynessDistanceRecommendationDTO> result = new ArrayList<>(poiBusynessDistanceRecommendationDTOHeap);
-        // recommendation from high to low
-        Collections.reverse(result);
-        return result;
+        return new ArrayList<>(poiBusynessDistanceRecommendationDTOHeap);
     }
 
     @Override

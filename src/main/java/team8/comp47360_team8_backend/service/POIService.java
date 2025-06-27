@@ -18,6 +18,6 @@ import java.util.Set;
  */
 public interface POIService {
     Set<POI> getPOIsByPOITypeName(String poiTypeName);
-    List<POIBusynessDistanceRecommendationDTO> assignBusynessDistanceForPOIs(String poiTypeName, POI lastPOI, HashMap<Long, String> zoneBusynessMap, String transitType);
+    List<POIBusynessDistanceRecommendationDTO> assignBusynessDistanceForPOIs(String poiTypeName, POI lastPOI, HashMap<Long, String> zoneBusynessMap, String transitType, int limit);
     List<UserPlan> getListOfRecommendations(List<RecommendationInputDTO> recommendationInputDTOS);
 }

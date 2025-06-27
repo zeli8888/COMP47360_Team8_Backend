@@ -36,9 +36,10 @@ public class POIController {
     public ResponseEntity<POIZoneBusynessDTO> getPOIsByPOITypeName(@RequestBody POI lastPOI,
                                                                    @RequestParam(required = true) String poiTypeName,
                                                                    @RequestParam(required = false) String transitType,
+                                                                   @RequestParam(required = false) Integer limit,
                                                                    @RequestParam(required = true) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime dateTime) {
         HashMap<Long, String> zoneBusynessMap = zoneService.predictZoneBusyness(dateTime);
-        List<POIBusynessDistanceRecommendationDTO> poiBusynessDistanceRecommendationDTOS = poiService.assignBusynessDistanceForPOIs(poiTypeName, lastPOI, zoneBusynessMap, transitType);
+        List<POIBusynessDistanceRecommendationDTO> poiBusynessDistanceRecommendationDTOS = poiService.assignBusynessDistanceForPOIs(poiTypeName, lastPOI, zoneBusynessMap, transitType, limit);
         // To avoid returning too many useless POIs, we only return the first 1000 most recommendations.
         return ResponseEntity.ok(new POIZoneBusynessDTO(
                 poiBusynessDistanceRecommendationDTOS.subList(0, Math.min(1000, poiBusynessDistanceRecommendationDTOS.size())),
