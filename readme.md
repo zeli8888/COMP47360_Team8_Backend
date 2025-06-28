@@ -29,13 +29,6 @@
 #### Zone busyness API:
 - predict one zone's busyness for continuous predictedHours after a specific time
 ![alt text](docs/get_zones.png)
-#### CSRF Token API:
-- for all post/put/delete requests and get requests to ```/user/**, /userplans/**```
-you need to include the csrf token in the header: ```X-XSRF-TOKEN:{token}```
-- first get the csrf token
-![alt text](docs/get_csrf_token.png)
-- then add the token to the header with ```X-XSRF-TOKEN:{token}``` for all following requests
-![alt text](docs/get_csrf_token2.png)
 #### Register API:
 - userName and password are necessary.
 - userPicture will be ignored, should be updated after registration.
@@ -44,41 +37,47 @@ you need to include the csrf token in the header: ```X-XSRF-TOKEN:{token}```
 #### Login API:
 - has to be form login
 ![alt text](docs/post_login.png)
-#### Update User Picture API:
+#### CSRF Token API:
 - has to login first
+- then get the csrf token
+![alt text](docs/get_csrf_token.png)
+- then add the token to the header with ```X-CSRF-TOKEN:{token}``` for following requests that need authentication.
+![alt text](docs/get_csrf_token2.png)
+![alt text](docs/get_csrf_token3.png)
+#### Update User Picture API:
+- has to login first & set the csrf token in header
 - file size limit is 5MB
 - file type should be image/jpeg, image/png, image/gif
 ![alt text](docs/post_user_picture.png)
 #### Get User Picture API:
-- has to login first
-- user profile picture is public. Once login, users can access others' pictures too. This is for future possible friend system.
+- don't need login, userPicture is public.
 ![alt text](docs/get_user_picture.png)
 #### Get User Details API:
-- has to login first
+- has to login first & set the csrf token in header
 - you can use ```<img src={user.userPicture}>```  directly in html to display the picture
 ![alt text](docs/get_user.png)
 #### Update User Details API:
-- has to login first
+- has to login first & set the csrf token in header
 - we don't offer email update service, it will link to third-party account automatically
 - userPicture will be ignored, should be updated by posting.
 ![alt text](docs/put_user.png)
 #### Logout API:
-- will redirect to login page, which can be set to frontend page when deploying
-![alt text](docs/get_logout.png)
+- has to login first & set the csrf token in header
+![alt text](docs/post_logout.png)
 #### Delete User API:
-- has to login first
+- has to login first & set the csrf token in header
 ![alt text](docs/delete_user.png)
 #### Add User Plan API:
-- has to login first
+- has to login first & set the csrf token in header
 ![alt text](docs/post_userplans.png)
 #### Get User Plan API:
-- has to login first
+- has to login first & set the csrf token in header
 ![alt text](docs/get_userplans.png)
 #### Update User Plan API:
-- has to login first
+- has to login first & set the csrf token in header
 ![alt text](docs/put_userplans.png)
 #### Delete User Plan API:
-- has to login first
+- has to login first & set the csrf token in header
 ![alt text](docs/delete_userplans.png)
 
 ---------------------

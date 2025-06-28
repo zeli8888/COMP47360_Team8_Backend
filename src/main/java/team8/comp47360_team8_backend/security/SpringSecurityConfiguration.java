@@ -63,8 +63,9 @@ public class SpringSecurityConfiguration {
                     requestUri = requestUri.substring(contextPath.length());
                     // protect get requests for endpoints starting with /user and /userplans
                     if (HttpMethod.GET.matches(request.getMethod())) {
-                        return requestUri.startsWith("/user") ||
-                                requestUri.startsWith("/userplans");
+                        // allow get requests for public user profile pictures
+                        return !requestUri.startsWith("/user/picture/") &&
+                                (requestUri.startsWith("/user") || requestUri.startsWith("/userplans"));
                     }
                     // allow post requests with /register and /login endpoints
                     if (HttpMethod.POST.matches(request.getMethod())) {
@@ -81,6 +82,7 @@ public class SpringSecurityConfiguration {
                         .requestMatchers("/poitypes/**").permitAll()
                         .requestMatchers("/pois/**").permitAll()
                         .requestMatchers("/zones/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/user/picture/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/register").permitAll()
                         .requestMatchers(HttpMethod.POST, "/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/logout`").authenticated()
