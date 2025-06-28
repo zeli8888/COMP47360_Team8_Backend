@@ -122,11 +122,9 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         }
         user.setPassword(encodedPassword);
         userRepository.save(user);
-        String pictureUri =
-                user.getUserPicture() == null ?
-                        null : ServletUriComponentsBuilder.fromCurrentContextPath().path("/user/picture/{pictureUrl}").
-                                buildAndExpand(user.getUserPicture()).toUri().toString();
-        return new User(null, null, user.getEmail(), user.getUserName(), pictureUri);
+        // for third-party account, the picture will be remote url
+        // for normal account, picture will be null
+        return new User(null, null, user.getEmail(), user.getUserName(), user.getUserPicture());
     }
 
     @Override
@@ -135,6 +133,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         if (user.getUserName() != null && !user.getUserName().equals(storedUser.getUserName())) {
             // update user name
             validateUsername(user.getUserName());
+            storedUser.setUserName(user.getUserName());
         }
         // we don't offer email update service for now, it should be linked with Google account
         if (user.getPassword() != null) {
@@ -143,26 +142,44 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         }
         // update user picture by posting, not here
         userRepository.save(storedUser);
-        String pictureUri =
-                user.getUserPicture() == null ?
-                null : ServletUriComponentsBuilder.fromCurrentContextPath().path("/user/picture/{pictureUrl}").
-                        buildAndExpand(storedUser.getUserPicture()).toUri().toString();
+
+        String pictureUri = storedUser.getUserPicture();
+        if (pictureUri != null && !pictureUri.startsWith("http")) {
+            // add app context only if it is a local file (not a remote url or null)
+            pictureUri = ServletUriComponentsBuilder.fromCurrentContextPath().path("/user/picture/{pictureUrl}").
+                    buildAndExpand(pictureUri).toUri().toString();
+        }
         return new User(null, null, storedUser.getEmail(), storedUser.getUserName(), pictureUri);
     }
 
     @Override
     public User getUser() {
         User user = getUserFromAuthentication();
-        String pictureUri =
-                user.getUserPicture() == null ?
-                null : ServletUriComponentsBuilder.fromCurrentContextPath().path("/user/picture/{pictureUrl}").
-                        buildAndExpand(user.getUserPicture()).toUri().toString();
+        String pictureUri = user.getUserPicture();
+        if (pictureUri != null && !pictureUri.startsWith("http")) {
+            // add app context only if it is a local file (not a remote url or null)
+            pictureUri = ServletUriComponentsBuilder.fromCurrentContextPath().path("/user/picture/{pictureUrl}").
+                    buildAndExpand(pictureUri).toUri().toString();
+        }
         return new User(null, null, user.getEmail(), user.getUserName(), pictureUri);
     }
 
     @Override
     public void deleteUser() {
-        userRepository.delete(getUserFromAuthentication());
+        User user = getUserFromAuthentication();
+        String pictureUri = user.getUserPicture();
+        if (pictureUri != null && !pictureUri.startsWith("http")) {
+            // delete local file
+            Path file = Paths.get(uploadPath).resolve(pictureUri);
+            if (Files.exists(file)) {
+                try {
+                    Files.delete(file);
+                } catch (IOException e) {
+                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to delete file: " + pictureUri, e);
+                }
+            }
+        }
+        userRepository.delete(user);
     }
 
     @Override
@@ -196,6 +213,13 @@ public class UserServiceImpl implements UserService, UserDetailsService {
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
             // Update the user's picture in the database
+            String oldPictureName = user.getUserPicture();
+            if ( oldPictureName != null && !oldPictureName.startsWith("http") && !oldPictureName.equals(fileName)) {
+                Path oldFilePath = uploadPathVal.resolve(oldPictureName);
+                if (Files.exists(oldFilePath)) {
+                    Files.delete(oldFilePath);
+                }
+            }
             user.setUserPicture(fileName);
             userRepository.save(user);
             return fileName;

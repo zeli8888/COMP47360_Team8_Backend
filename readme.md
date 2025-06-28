@@ -18,36 +18,66 @@
 ![alt text](docs/get_pois.png)
 - request body & zone busyness:
 ![alt text](docs/get_pois2.png)
-### Recommendation API:
+#### Recommendation API:
 - fixed location should contain latitude, longitude, poiName, zoneId, time, transitType (optional) 
 - uncertain location should contain poiTypeName, time, transitType (optional) 
 - the first location should be fixed start location without transitType
 ![alt text](docs/get_pois_recommendation.png)
-### POI Type API:
+#### POI Type API:
 ![alt text](docs/get_poitypes.png)
-### Zone busyness API:
+#### Zone busyness API:
 - predict one zone's busyness for continuous predictedHours after a specific time
 ![alt text](docs/get_zones.png)
+#### Register API:
+- userName and password are necessary.
+- userPicture will be ignored, should be updated after registration.
+- email will be linked automatically when user login through third-party account.
+![alt text](docs/post_register.png)
+#### Login API:
+- has to be form login
+![alt text](docs/post_login.png)
+#### Update User Picture API:
+- has to login first
+- file size limit is 5MB
+- file type should be image/jpeg, image/png, image/gif
+![alt text](docs/post_user_picture.png)
+#### Get User Picture API:
+- has to login first
+- user profile picture is public. Once login, users can access others' pictures too. This is for future possible friend system.
+![alt text](docs/get_user_picture.png)
+#### Get User Details API:
+- has to login first
+- you can use ```<img src={user.userPicture}>```  directly in html to display the picture
+![alt text](docs/get_user.png)
+#### Update User Details API:
+- has to login first
+- we don't offer email update service, it will link to third-party account automatically
+- userPicture will be ignored, should be updated by posting.
+![alt text](docs/put_user.png)
+#### Logout API:
+- will redirect to login page, which can be set to frontend page when deploying
+![alt text](docs/get_logout.png)
+#### Delete User API:
+- has to login first
+![alt text](docs/delete_user.png)
+#### Add User Plan API:
+- has to login first
+![alt text](docs/post_userplans.png)
+#### Get User Plan API:
+- has to login first
+![alt text](docs/get_userplans.png)
+#### Update User Plan API:
+- has to login first
+![alt text](docs/put_userplans.png)
+#### Delete User Plan API:
+- has to login first
+![alt text](docs/delete_userplans.png)
 
-#### user plan api needs to be authenticated, user has to log in first and cannot access other users' plan
-![api-example-userplan-post.png](docs/api-example-userplan-post.png)
-![api-example-userplan-get-userid.png](docs/api-example-userplan-get-userid.png)
-![api-example-userplan-get-username.png](docs/api-example-userplan-get-username.png)
-![api-example-userplan-update.png](docs/api-example-userplan-update.png)
-![api-example-userplan-delete.png](docs/api-example-userplan-delete.png)
-
-### Login api is POST request to http://localhost:8080/login 
-
-### with form data: 
-
-- #### **"username"** as key, **username or email** as value 
-
-- #### **"password"** as key, password as value
 ---------------------
 ### Testing
 - Please check the testing folder src/test/java/team8/comp47360_team8_backend
 - For unit testing, there are test cases for controller, service
 - If you want to contribute, please create a new branch and push to github. After you finish, please message me to avoid duplicate work.
-- I have done POIControllerTest and ZoneServiceTest, you can check them for reference.
+- I have done POIControllerTest, you can check for reference.
 - We will implement integration testing in the future.
 - This is not mandatory, so only do it when you have free time.
