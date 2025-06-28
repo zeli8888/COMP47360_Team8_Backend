@@ -9,6 +9,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
 import org.springframework.security.web.header.writers.StaticHeadersWriter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -49,17 +51,40 @@ public class SpringSecurityConfiguration {
         source.registerCorsConfiguration("/**", configuration);
 
         http.cors(cors -> cors.configurationSource(source));
-        http.csrf(csrf -> csrf.disable());
+        http.csrf(csrf -> csrf
+                .csrfTokenRepository(new HttpSessionCsrfTokenRepository())
+                // only generate tokens when needed.
+                // Without this, spring security will generate a token for every request even if with HttpSessionCsrfTokenRepository
+                .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+                .requireCsrfProtectionMatcher(request -> {
+                    String requestUri = request.getRequestURI();
+                    String contextPath = request.getContextPath();
+                    // remove context path
+                    requestUri = requestUri.substring(contextPath.length());
+                    // protect get requests for endpoints starting with /user and /userplans
+                    if (HttpMethod.GET.matches(request.getMethod())) {
+                        return requestUri.startsWith("/user") ||
+                                requestUri.startsWith("/userplans");
+                    }
+                    // allow post requests with /register and /login endpoints
+                    if (HttpMethod.POST.matches(request.getMethod())) {
+                        return !("/register".equals(requestUri) || "/login".equals(requestUri));
+                    }
+                    // protect other post/put/delete requests
+                    return true;
+                })
+        );
 
         http.authorizeHttpRequests(
                 authorizeRequest -> authorizeRequest.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(excludedURLs).permitAll()
-                        .requestMatchers(HttpMethod.POST, "/register").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/login").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/logout`").permitAll()
                         .requestMatchers("/poitypes/**").permitAll()
                         .requestMatchers("/pois/**").permitAll()
                         .requestMatchers("/zones/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/register").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/logout`").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/csrf-token").authenticated()
                         .requestMatchers("/user/**").authenticated()
                         .requestMatchers("/userplans/**").authenticated()
                         .anyRequest().permitAll()
@@ -72,9 +97,14 @@ public class SpringSecurityConfiguration {
         );
 
         http.logout(logout -> logout
-                .logoutUrl("/logout") // URL to trigger logout
-                .invalidateHttpSession(true) // Invalidate the session
-                .deleteCookies("JSESSIONID") // Delete the session cookie
+                // URL to trigger logout, Post request
+                .logoutUrl("/logout")
+                // Invalidate the session
+                .invalidateHttpSession(true)
+                // Delete the session cookie
+                .deleteCookies("JSESSIONID")
+                .logoutSuccessHandler((request, response, authentication) -> {
+                    response.setStatus(HttpServletResponse.SC_OK);})
         );
 
         http.authenticationProvider(authenticationProvider);

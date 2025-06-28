@@ -11,6 +11,7 @@
 -------------------------
 ### Check API by starting this application and open
 ### http://localhost:8080/swagger-ui/index.html
+### The frontend url is set to http://localhost:3000, run frontend in this url to avoid cross-origin issue
 ---------------
 ### Example API with Postman
 #### poi list & zone busyness
@@ -28,6 +29,13 @@
 #### Zone busyness API:
 - predict one zone's busyness for continuous predictedHours after a specific time
 ![alt text](docs/get_zones.png)
+#### CSRF Token API:
+- for all post/put/delete requests and get requests to ```/user/**, /userplans/**```
+you need to include the csrf token in the header: ```X-XSRF-TOKEN:{token}```
+- first get the csrf token
+![alt text](docs/get_csrf_token.png)
+- then add the token to the header with ```X-XSRF-TOKEN:{token}``` for all following requests
+![alt text](docs/get_csrf_token2.png)
 #### Register API:
 - userName and password are necessary.
 - userPicture will be ignored, should be updated after registration.
