@@ -1,6 +1,10 @@
 package team8.comp47360_team8_backend.service.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -10,6 +14,9 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import team8.comp47360_team8_backend.exception.EmailAlreadyExistException;
 import team8.comp47360_team8_backend.exception.UserAlreadyExistException;
 import team8.comp47360_team8_backend.model.User;
@@ -17,10 +24,16 @@ import team8.comp47360_team8_backend.repository.UserRepository;
 import team8.comp47360_team8_backend.security.CustomUserDetails;
 import team8.comp47360_team8_backend.service.UserService;
 
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -38,8 +51,17 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Value("${upload.path}")
+    private String uploadPath;
+
+    @Value("${user.picture.size}")
+    private int userPictureSize;
+
+    private static final String[] ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/gif"};
+
     @Override
-    public UserDetails loadUserByUsername(String userName) throws UsernameNotFoundException {
+    public UserDetails loadUserByUsername(String userName) {
+        if (userName == null) throw new UsernameNotFoundException("Please offer user name or email!");
         Optional<User> opt = userRepository.findByUserName(userName);
 
         if (!opt.isPresent()) {
@@ -47,9 +69,10 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         }
 
         if(!opt.isPresent())
-            throw new UsernameNotFoundException("User not exist !");
+            throw new UsernameNotFoundException("User not exist!");
         else {
             User user = opt.get();
+            if (user.getPassword() == null) throw new UsernameNotFoundException("Please login through third-party Account!");
             Set<GrantedAuthority> authorities = new HashSet<>();
             // Add a default role directly without the ROLE_ prefix
             authorities.add(new SimpleGrantedAuthority("ROLE_USER")); // replace "USER" with your actual default role
@@ -64,65 +87,136 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 
     @Override
     public User createUser(User user) {
-        String email = user.getEmail();
+        user.setId(null);
+        user.setUserPlans(null);
+        String googleId = user.getGoogleId();
+        if (googleId == null && user.getUserName() == null) throw new UsernameNotFoundException("User name cannot be null");
+        // third party account should have no userName and password
+        if (googleId != null) {
+            user.setUserName(null);
+            user.setPassword(null);
+        }
         String userName = user.getUserName();
-        if (email == null && userName == null) throw new UsernameNotFoundException("User email and user name cannot both be null");
-        if (email != null && !isValidEmail(email)){
-            throw new UsernameNotFoundException("User email invalid: " + email);
+        if (userName != null) {
+            validateUsername(userName);
+            // normal user register should set email afterward to allow validation.
+            user.setEmail(null);
+            // normal user register should set profile picture afterward by posting.
+            user.setUserPicture(null);
         }
-        if (userName != null && !isValidUsername(userName)){
-            throw new UsernameNotFoundException("User name invalid: " + userName);
-        }
-        if (email != null && userRepository.findByEmail(email).isPresent()){
-            throw new EmailAlreadyExistException(email);
-        }
-        if (userRepository.findByUserName(userName).isPresent()){
-            throw new UserAlreadyExistException(userName);
-        }
+        String email = user.getEmail();
+        // third party account register with email
+        if (email != null) validateEmail(email);
+
         String passwd= user.getPassword();
-        if (passwd == null){
+        String encodedPassword;
+        if (passwd == null && userName != null){
+            // normal user register with no password
             throw new UsernameNotFoundException("User password cannot be null");
-        }
-        String encodedPassword = passwordEncoder.encode(passwd);
-        if (user.getUserName() == null){
-            user.setUserName(generateDistinctUsername());
+        } else if (passwd == null) {
+            // new user register with third-party account
+            encodedPassword = null;
+        } else {
+            // normal user register
+            encodedPassword = passwordEncoder.encode(passwd);
         }
         user.setPassword(encodedPassword);
-        user.setId(null);
-        user = userRepository.save(user);
-        return user;
+        userRepository.save(user);
+        String pictureUri =
+                user.getUserPicture() == null ?
+                        null : ServletUriComponentsBuilder.fromCurrentContextPath().path("/user/picture/{pictureUrl}").
+                                buildAndExpand(user.getUserPicture()).toUri().toString();
+        return new User(null, null, user.getEmail(), user.getUserName(), pictureUri);
     }
 
     @Override
     public User updateUser(User user) {
         User storedUser = getUserFromAuthentication();
-        if (user.getUserName() != null) {
-            if (isValidUsername(user.getUserName())) {
-                storedUser.setUserName(user.getUserName());
-            }
+        if (user.getUserName() != null && !user.getUserName().equals(storedUser.getUserName())) {
+            // update user name
+            validateUsername(user.getUserName());
         }
-        if (user.getEmail() != null) {
-            if (isValidEmail(user.getEmail())) {
-                storedUser.setEmail(user.getEmail());
-            }
-        }
+        // we don't offer email update service for now, it should be linked with Google account
         if (user.getPassword() != null) {
             String encodedPassword = passwordEncoder.encode(user.getPassword());
             storedUser.setPassword(encodedPassword);
         }
+        // update user picture by posting, not here
         userRepository.save(storedUser);
-        return new User(null, null, storedUser.getEmail(), storedUser.getUserName(), null);
+        String pictureUri =
+                user.getUserPicture() == null ?
+                null : ServletUriComponentsBuilder.fromCurrentContextPath().path("/user/picture/{pictureUrl}").
+                        buildAndExpand(storedUser.getUserPicture()).toUri().toString();
+        return new User(null, null, storedUser.getEmail(), storedUser.getUserName(), pictureUri);
     }
 
     @Override
     public User getUser() {
         User user = getUserFromAuthentication();
-        return new User(null, null, user.getEmail(), user.getUserName(), null);
+        String pictureUri =
+                user.getUserPicture() == null ?
+                null : ServletUriComponentsBuilder.fromCurrentContextPath().path("/user/picture/{pictureUrl}").
+                        buildAndExpand(user.getUserPicture()).toUri().toString();
+        return new User(null, null, user.getEmail(), user.getUserName(), pictureUri);
     }
 
     @Override
     public void deleteUser() {
         userRepository.delete(getUserFromAuthentication());
+    }
+
+    @Override
+    public String updateUserPicture(MultipartFile file) {
+        if (file.isEmpty() || file.getOriginalFilename() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Please select a file to upload.");
+        }
+
+        // Check file size
+        if (file.getSize() > userPictureSize) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File size must be less than " + userPictureSize/1024 + " KB.");
+        }
+
+        // Check file content type
+        String contentType = file.getContentType();
+        if (!isAllowedContentType(contentType)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File content type is not allowed");
+        }
+
+        try {
+            // Create the directory if it doesn't exist
+            Path uploadPathVal = Paths.get(uploadPath);
+            if (!Files.exists(uploadPathVal)) {
+                Files.createDirectories(uploadPathVal);
+            }
+
+            // Save the file to the server
+            User user = getUserFromAuthentication();
+            String fileName = "user_" + user.getId() + "_" + file.getOriginalFilename();
+            Path filePath = uploadPathVal.resolve(fileName);
+            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+            // Update the user's picture in the database
+            user.setUserPicture(fileName);
+            userRepository.save(user);
+            return fileName;
+        } catch (IOException e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to upload file.", e);
+        }
+    }
+
+    @Override
+    public Resource getUserPicture(String filename) {
+        Path filePath = Paths.get(uploadPath).resolve(filename);
+        if (Files.exists(filePath) && Files.isReadable(filePath)) {
+            Resource resource;
+            try {
+                resource = new UrlResource(filePath.toUri());
+            } catch (MalformedURLException e) {
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to create URL resource for file: " + filename, e);
+            }
+            if (resource.exists()) return resource;
+        }
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "File not found.");
     }
 
     private User getUserFromAuthentication() {
@@ -131,28 +225,29 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         return userRepository.findById(userDetail.getUserId()).orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 
-    private boolean isValidEmail(String email) {
+    private void validateEmail(String email) {
         String emailRegex = "^((?!\\.)[\\w\\-_.]*[^.])(@\\w+)(\\.\\w+(\\.\\w+)?[^.\\W])$";
         Pattern pattern = Pattern.compile(emailRegex);
         Matcher matcher = pattern.matcher(email);
-        return matcher.matches();
+        if (!matcher.matches()) throw new UsernameNotFoundException("User email invalid: " + email);
+        if (userRepository.findByEmail(email).isPresent()) throw new EmailAlreadyExistException(email);
     }
 
-    private boolean isValidUsername(String username) {
+    private void validateUsername(String userName) {
         // This example allows alphanumeric characters, underscores, and hyphens, with a length between 3 and 16 characters
         String usernameRegex = "^[a-zA-Z0-9_-]{3,16}$";
         Pattern pattern = Pattern.compile(usernameRegex);
-        Matcher matcher = pattern.matcher(username);
-        return matcher.matches();
+        Matcher matcher = pattern.matcher(userName);
+        if (!matcher.matches()) throw new UsernameNotFoundException("User name invalid: " + userName);
+        if (userRepository.findByUserName(userName).isPresent()) throw new UserAlreadyExistException(userName);
     }
 
-    private String generateDistinctUsername(){
-        String username;
-        do {
-            // allowed number of distinct username: 16**8 = 4,294,967,296
-            username = "user_" + UUID.randomUUID().toString().substring(0, 8);
-        } while (userRepository.findByUserName(username).isPresent());
-        return username;
+    private boolean isAllowedContentType(String contentType) {
+        for (String allowedType : ALLOWED_CONTENT_TYPES) {
+            if (allowedType.equals(contentType)) {
+                return true;
+            }
+        }
+        return false;
     }
-
 }

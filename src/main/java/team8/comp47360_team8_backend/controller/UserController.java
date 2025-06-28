@@ -1,13 +1,20 @@
 package team8.comp47360_team8_backend.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import team8.comp47360_team8_backend.model.User;
 import team8.comp47360_team8_backend.service.UserService;
 
+import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Files;
 
 /**
  * @Author : Ze Li
@@ -21,12 +28,35 @@ public class UserController {
     private UserService userService;
 
     @PostMapping("/register")
-    public ResponseEntity<Void> createUser(@RequestBody User user)
-    {
+    public ResponseEntity<User> createUser(@RequestBody User user) {
         User createdUser = userService.createUser(user);
-        URI uri = ServletUriComponentsBuilder.fromUriString("/users/{userName}").buildAndExpand(createdUser.getUserName())
+        URI uri = ServletUriComponentsBuilder.fromCurrentContextPath()
+                .path("/user")
+                .build()
                 .toUri();
-        return ResponseEntity.created(uri).build();
+        return ResponseEntity.created(uri).body(createdUser);
+    }
+
+    @PostMapping("/user/picture")
+    public ResponseEntity<String> updateUserPicture(@RequestParam("file")MultipartFile file) {
+        String pictureUrl = userService.updateUserPicture(file);
+        URI uri = ServletUriComponentsBuilder.fromCurrentRequest().path("/{pictureUrl}").buildAndExpand(pictureUrl).toUri();
+        return ResponseEntity.created(uri).body("Picture uploaded successfully");
+    }
+
+    @GetMapping("/user/picture/{filePath:.+}")
+    public ResponseEntity<Resource> getUserPicture(@PathVariable String filePath){
+        Resource userPicture = userService.getUserPicture(filePath);
+        String contentType;
+        try {
+            contentType = Files.probeContentType(userPicture.getFile().toPath());
+        } catch (IOException e) {
+            contentType = "application/octet-stream";
+        }
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + userPicture.getFilename() + "\"")
+                .contentType(MediaType.parseMediaType(contentType))
+                .body(userPicture);
     }
 
     @PutMapping("/user")

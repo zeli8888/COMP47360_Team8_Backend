@@ -1,4 +1,5 @@
 package team8.comp47360_team8_backend.model;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 /**
@@ -14,6 +15,7 @@ public class Zone {
     private long zoneId;
 
     @Column(unique = true, nullable = false)
+    @JsonIgnore
     private String zoneName;
 
     public Zone() {

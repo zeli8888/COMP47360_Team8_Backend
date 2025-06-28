@@ -35,7 +35,6 @@ public class POI {
             CascadeType.REFRESH
     })
     @JoinColumn(name = "zone_id", nullable = false, referencedColumnName = "zone_id")
-    @JsonIgnore
     private Zone zone;
 
     @ManyToOne(fetch = FetchType.EAGER, optional = false, cascade = {

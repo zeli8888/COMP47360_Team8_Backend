@@ -21,13 +21,17 @@ public class User {
     @JsonIgnore
     private Long id;
 
-    @Column(name="user_passwd")
+    @Column(name="google_id", unique = true, nullable = true)
+    @JsonIgnore
+    private String googleId;
+
+    @Column(name="user_passwd", nullable = true)
     private String password;
 
-    @Column(name="user_email", unique = true)
+    @Column(name="user_email", unique = true, nullable = true)
     private String email;
 
-    @Column(name="user_name", unique = true, nullable = false)
+    @Column(name="user_name", unique = true, nullable = true)
     private String userName;
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = {
@@ -37,22 +41,44 @@ public class User {
     @JsonIgnore
     private Set<UserPlan> userPlans = new HashSet<>();
 
+    @Column(name="user_picture", nullable = true)
+    private String userPicture;
+
     public User() {
     }
 
-    public User(Long id, String password, String email, String userName) {
+    public User(Long id, String password, String email, String userName, String userPicture) {
         this.id = id;
         this.password = password;
         this.email = email;
         this.userName = userName;
+        this.userPicture = userPicture;
     }
 
-    public User(Long id, String password, String email, String userName, Set<UserPlan> userPlans) {
+    public User(Long id, String googleId, String password, String email, String userName, Set<UserPlan> userPlans, String userPicture) {
         this.id = id;
+        this.googleId = googleId;
         this.password = password;
         this.email = email;
         this.userName = userName;
         this.userPlans = userPlans;
+        this.userPicture = userPicture;
+    }
+
+    public String getGoogleId() {
+        return googleId;
+    }
+
+    public void setGoogleId(String googleId) {
+        this.googleId = googleId;
+    }
+
+    public String getUserPicture() {
+        return userPicture;
+    }
+
+    public void setUserPicture(String userPicture) {
+        this.userPicture = userPicture;
     }
 
     public Long getId() {
