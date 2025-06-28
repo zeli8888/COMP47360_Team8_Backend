@@ -79,7 +79,7 @@ public class SpringSecurityConfiguration {
         http.authorizeHttpRequests(
                 authorizeRequest -> authorizeRequest.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(excludedURLs).permitAll()
-                        .requestMatchers("/weather").permitAll()
+                        .requestMatchers("/weather")
                         .requestMatchers("/poitypes/**").permitAll()
                         .requestMatchers("/pois/**").permitAll()
                         .requestMatchers("/zones/**").permitAll()

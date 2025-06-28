@@ -29,6 +29,9 @@
 #### Zone busyness API:
 - predict one zone's busyness for continuous predictedHours after a specific time
 ![alt text](docs/get_zones.png)
+#### Weather API:
+- check https://openweathermap.org/api/one-call-3 for details
+![alt text](docs/get_weather.png)
 #### Register API:
 - userName and password are necessary.
 - userPicture will be ignored, should be updated after registration.
