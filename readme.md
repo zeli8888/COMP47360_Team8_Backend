@@ -10,7 +10,7 @@
 - mvn spring-boot:run
 -------------------------
 ### Check API by starting this application and open
-### http://localhost:8080/swagger-ui/index.html
+### http://localhost:8080/api/swagger-ui/index.html
 ### The frontend url is set to http://localhost:3000, run frontend in this url to avoid cross-origin issue
 ---------------
 ### Example API with Postman
