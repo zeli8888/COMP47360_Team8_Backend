@@ -1,5 +1,5 @@
 spring.application.name=COMP47360_Team8_Backend
-server.port=443
+server.port=8080
 server.servlet.context-path=/api
 #frontend.url=http://localhost:3000
 # for testing purposes, allow all origins
