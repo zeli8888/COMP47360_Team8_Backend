@@ -21,5 +21,5 @@ volumes:
     driver: local
     driver_opts:
       type: none
-      device: D:\study_software\docker\planhattan-database
+      device: ${PLANHATTAN_MYSQL_VOLUME}
       o: bind
