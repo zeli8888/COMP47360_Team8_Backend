@@ -1,0 +1,17 @@
+services:
+
+  planhattan-api:
+    image: planhattan-api:1.0
+    container_name: planhattan-api
+    ports:
+      - 8080:8080
+    networks:
+      - planhattan-network
+    environment:
+      - OPEN_WEATHER_KEY=${OPEN_WEATHER_KEY}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - planhattan-mysql-url=jdbc:mysql://planhattan-mysql:3306/comp47360
+
+networks:
+  planhattan-network:
+    driver: bridge

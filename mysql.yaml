@@ -1,0 +1,25 @@
+services:
+  mysql:
+    image: mysql:8.0.36
+    container_name: planhattan-mysql
+    ports:
+      - 3307:3306
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql  # initialize database
+    networks:
+      - planhattan-network
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_PASSWORD}
+
+networks:
+  planhattan-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
+    driver: local
+    driver_opts:
+      type: none
+      device: D:\study_software\docker\planhattan-database
+      o: bind

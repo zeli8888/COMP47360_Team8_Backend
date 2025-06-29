@@ -1,0 +1,42 @@
+pipeline{
+
+  agent any
+  environment {
+    version = '1.0'
+  }
+
+  stages{
+
+    stage('Start Database'){
+      steps{
+        sh 'docker-compose -p planhattan -f mysql.yaml up -d'
+      }
+    }
+
+    stage('Test'){
+      steps{
+        sh 'mvn test'
+      }
+    }
+
+    stage('Build'){
+      steps{
+        sh 'mvn clean package'
+      }
+    }
+
+    stage('Build Docker Image'){
+      steps{
+        sh "docker build -t PlanHattan-API:${version} ."
+        sh "docker tag PlanHattan-API:${version} zeli8888/PlanHattan-API:${version}"
+        sh "docker push zeli8888/PlanHattan-API:${version}"
+      }
+    }
+
+    stage('Run Docker Container'){
+      steps{
+        sh 'docker-compose -p planhattan -f PlanHattan-API.yaml up --force-recreate -d'
+      }
+    }
+  }
+}
