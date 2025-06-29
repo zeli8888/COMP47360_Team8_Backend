@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @Author : Ze Li
- * @Date : 25/06/2025 23:30
+ * @Date : 29/06/2025 13:56
  * @Version : V1.0
  * @Description :
  */
@@ -14,6 +14,14 @@ class UserControllerTest {
 
     @Test
     void createUser() {
+    }
+
+    @Test
+    void updateUserPicture() {
+    }
+
+    @Test
+    void getUserPicture() {
     }
 
     @Test
@@ -26,5 +34,9 @@ class UserControllerTest {
 
     @Test
     void deleteUser() {
+    }
+
+    @Test
+    void getCsrfToken() {
     }
 }
