@@ -73,6 +73,9 @@
 #### Add User Plan API:
 - has to login first & set the csrf token in header
 ![alt text](docs/post_userplans.png)
+#### Add Multiple User Plan API:
+- has to login first & set the csrf token in header
+![alt text](docs/post_userplans_multiple.png)
 #### Get User Plan API:
 - has to login first & set the csrf token in header
 ![alt text](docs/get_userplans.png)
@@ -82,7 +85,9 @@
 #### Delete User Plan API:
 - has to login first & set the csrf token in header
 ![alt text](docs/delete_userplans.png)
-
+#### Delete Multiple User Plan API:
+- has to login first & set the csrf token in header
+![alt text](docs/delete_userplans_multiple.png)
 ---------------------
 ### Testing
 - Please check the testing folder src/test/java/team8/comp47360_team8_backend

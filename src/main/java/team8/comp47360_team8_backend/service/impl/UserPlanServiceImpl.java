@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import team8.comp47360_team8_backend.exception.UnauthorizedAccessException;
 import team8.comp47360_team8_backend.exception.UserPlanNotFoundException;
 import team8.comp47360_team8_backend.model.User;
@@ -62,6 +63,26 @@ public class UserPlanServiceImpl implements UserPlanService {
         userPlan.setUserPlanId(userPlanId);
         userPlan.setUser(user);
         return userPlanRepository.save(userPlan);
+    }
+
+    @Override
+    @Transactional
+    public void deleteUserPlan(List<Long> userPlanIds) {
+        for (long userPlanId : userPlanIds) {
+            deleteUserPlan(userPlanId);
+        }
+    }
+
+    @Override
+    @Transactional
+    public List<UserPlan> createUserPlan(List<UserPlan> userPlans) {
+        long userId = getAuthenticatedUser().getUserId();
+        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("Authenticated User Not Found!"));
+        for (UserPlan userPlan : userPlans) {
+            userPlan.setUser(user);
+            userPlan.setUserPlanId(null);
+        }
+        return userPlanRepository.saveAll(userPlans);
     }
 
     private CustomUserDetails getAuthenticatedUser() {

@@ -27,7 +27,7 @@ public class UserPlanController {
 
     @PostMapping("/userplans")
     public ResponseEntity<UserPlan> createUserPlan(@RequestBody UserPlan userPlan) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(userPlanService.createUserPlan(userPlan));
+        return ResponseEntity.ok(userPlanService.createUserPlan(userPlan));
     }
 
     @PostMapping("/userplans/multiple")

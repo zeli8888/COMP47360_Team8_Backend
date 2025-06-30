@@ -15,4 +15,6 @@ public interface UserPlanService {
     void deleteUserPlan(long userPlanId);
     UserPlan createUserPlan(UserPlan userPlan);
     UserPlan updateUserPlan(long userPlanId, UserPlan userPlan);
+    void deleteUserPlan(List<Long> userPlanIds);
+    List<UserPlan> createUserPlan(List<UserPlan> userPlans);
 }
