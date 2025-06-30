@@ -1,4 +1,4 @@
-package team8.comp47360_team8_backend.controller;
+package team8.comp47360_team8_backend.service.impl;
 
 import org.junit.jupiter.api.Test;
 
@@ -10,14 +10,10 @@ import static org.junit.jupiter.api.Assertions.*;
  * @Version : V1.0
  * @Description :
  */
-class UserPlanControllerTest {
+class UserPlanServiceImplTest {
 
     @Test
     void getUserPlans() {
-    }
-
-    @Test
-    void createUserPlan() {
     }
 
     @Test
@@ -25,14 +21,10 @@ class UserPlanControllerTest {
     }
 
     @Test
+    void createUserPlan() {
+    }
+
+    @Test
     void updateUserPlan() {
-    }
-
-    @Test
-    void testCreateUserPlan() {
-    }
-
-    @Test
-    void testDeleteUserPlan() {
     }
 }

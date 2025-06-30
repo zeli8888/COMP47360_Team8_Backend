@@ -27,4 +27,12 @@ class UserPlanServiceImplTest {
     @Test
     void updateUserPlan() {
     }
+
+    @Test
+    void testDeleteUserPlan() {
+    }
+
+    @Test
+    void testCreateUserPlan() {
+    }
 }
