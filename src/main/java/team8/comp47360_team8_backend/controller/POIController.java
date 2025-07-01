@@ -33,12 +33,14 @@ public class POIController {
     private ZoneService zoneService;
 
     @GetMapping("/pois")
-    public ResponseEntity<POIZoneBusynessDTO> getPOIsByPOITypeName(@RequestBody POI lastPOI,
+    public ResponseEntity<POIZoneBusynessDTO> getPOIsByPOITypeName(@RequestParam(required = true) Double latitude,
+                                                                   @RequestParam(required = true) Double longitude,
                                                                    @RequestParam(required = true) String poiTypeName,
                                                                    @RequestParam(required = false) String transitType,
                                                                    @RequestParam(required = false) Integer limit,
                                                                    @RequestParam(required = true) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime dateTime) {
         HashMap<Long, String> zoneBusynessMap = zoneService.predictZoneBusyness(dateTime);
+        POI lastPOI = new POI(latitude, longitude);
         List<POIBusynessDistanceRecommendationDTO> poiBusynessDistanceRecommendationDTOS = poiService.assignBusynessDistanceForPOIs(poiTypeName, lastPOI, zoneBusynessMap, transitType, limit);
         // To avoid returning too many useless POIs, we only return the first 1000 most recommendations.
         return ResponseEntity.ok(new POIZoneBusynessDTO(
@@ -47,7 +49,7 @@ public class POIController {
         );
     }
 
-    @GetMapping("/pois/recommendation")
+    @PostMapping("/pois/recommendation")
     public ResponseEntity<List<UserPlan>> getListOfRecommendations(@RequestBody List<RecommendationInputDTO> recommendationInputDTOS) {
         // the first recommendationInputDTO should be the start location, with valid zoneId, latitude, longitude and time
         // other recommendationInputDTOs should have valid poiTypeName, transitType and time so that we can recommend

@@ -67,9 +67,9 @@ public class SpringSecurityConfiguration {
                         return !requestUri.startsWith("/user/picture/") &&
                                 (requestUri.startsWith("/user") || requestUri.startsWith("/userplans"));
                     }
-                    // allow post requests with /register and /login endpoints
+                    // allow post requests with /register, /login and /pois/recommendation endpoints
                     if (HttpMethod.POST.matches(request.getMethod())) {
-                        return !("/register".equals(requestUri) || "/login".equals(requestUri));
+                        return !("/register".equals(requestUri) || "/login".equals(requestUri) || "/pois/recommendation".equals(requestUri));
                     }
                     // protect other post/put/delete requests
                     return true;
