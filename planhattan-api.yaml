@@ -4,7 +4,7 @@ services:
     image: zeli8888/planhattan-api:1.0
     container_name: planhattan-api
     ports:
-      - 443:443
+      - 8000:8000
     networks:
       - planhattan-network
     environment:
