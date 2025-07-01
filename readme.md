@@ -17,9 +17,10 @@
 #### poi list & zone busyness
 - query params & poi list:
 ![alt text](docs/get_pois.png)
-- request body & zone busyness:
+- zone busyness:
 ![alt text](docs/get_pois2.png)
 #### Recommendation API:
+- POST Request
 - fixed location should contain latitude, longitude, poiName, zoneId, time, transitType (optional) 
 - uncertain location should contain poiTypeName, time, transitType (optional) 
 - the first location should be fixed start location without transitType
