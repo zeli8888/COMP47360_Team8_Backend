@@ -56,9 +56,8 @@ class POIControllerTest {
         String poiTypeName = "restaurant";
         String transitType = "car";
         String dateTimeString = ZonedDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME);
-        POI lastPOI = new POI(
-                null, "lastPOI", "lastPOI description", 5.0, 5.0, null, null
-        );
+        String latitude = "5.0";
+        String longitude = "5.0";
 
         // Mock data
         Zone zone1 = new Zone(1L, "Zone1");
@@ -92,8 +91,8 @@ class POIControllerTest {
                 .param("transitType", transitType)
                 .param("dateTime", dateTimeString)
                 .param("limit", "1000")
-                .content(om.writeValueAsString(lastPOI))
-                .contentType(MediaType.APPLICATION_JSON)
+                .param("latitude", latitude)
+                .param("longitude", longitude)
                 .accept(MediaType.APPLICATION_JSON);
         MvcResult mvcResult = mockMvc.perform(requestBuilder).andReturn();
         verify(zoneService, times(1)).predictZoneBusyness(ZonedDateTime.parse(dateTimeString));
