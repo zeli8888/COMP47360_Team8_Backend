@@ -10,7 +10,7 @@ services:
     environment:
       - OPEN_WEATHER_KEY=${OPEN_WEATHER_KEY}
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
-      - planhattan-mysql-url=jdbc:mysql://planhattan-mysql:3306/comp47360
+      - PLANHATTAN_MYSQL_URL=jdbc:mysql://planhattan-mysql:3306/comp47360
 
 networks:
   planhattan-network:
