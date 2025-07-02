@@ -6,7 +6,7 @@ services:
     ports:
       - 8000:8000
     volumes:
-      - planhattan-uploads:/uploads/
+      - planhattan-uploads:/var/lib/mysql
     networks:
       - planhattan-network
     environment:
