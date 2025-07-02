@@ -2,7 +2,7 @@ pipeline{
 
   agent any
   environment {
-    version = '1.1'
+    version = '1.2'
   }
 
   stages{
@@ -35,7 +35,7 @@ pipeline{
 
     stage('Run Docker Container'){
       steps{
-        sh 'docker-compose -p planhattan -f planhattan-api.yaml up --force-recreate -d'
+        sh "export version=${version} && docker-compose -p planhattan -f planhattan-api.yaml up --force-recreate -d"
       }
     }
   }

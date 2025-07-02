@@ -1,12 +1,12 @@
 services:
 
   planhattan-api:
-    image: zeli8888/planhattan-api:1.1
+    image: zeli8888/planhattan-api:${VERSION}
     container_name: planhattan-api
     ports:
       - 8000:8000
     volumes:
-      - planhattan-uploads:/var/lib/mysql
+      - planhattan-uploads:/home/planhattan-api/uploads/
     networks:
       - planhattan-network
     environment:
