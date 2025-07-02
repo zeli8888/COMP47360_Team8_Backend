@@ -1,7 +1,7 @@
 services:
 
   planhattan-api:
-    image: zeli8888/planhattan-api:1.0
+    image: zeli8888/planhattan-api:1.1
     container_name: planhattan-api
     ports:
       - 8000:8000
