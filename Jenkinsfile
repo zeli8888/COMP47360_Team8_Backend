@@ -9,7 +9,7 @@ pipeline{
 
     stage('Start Database'){
       steps{
-        sh 'docker-compose -p planhattan -f mysql.yaml up -d --force-recreate --wait'
+        sh 'docker-compose -p planhattan -f mysql.yaml up -d --force-recreate'
       }
     }
 
@@ -35,7 +35,7 @@ pipeline{
 
     stage('Run Docker Container'){
       steps{
-        sh "export version=${version} && docker-compose -p planhattan -f planhattan-api.yaml up -d --force-recreate --wait"
+        sh "export version=${version} && docker-compose -p planhattan -f planhattan-api.yaml up -d --force-recreate"
       }
     }
   }
