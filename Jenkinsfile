@@ -9,6 +9,8 @@ pipeline{
 
     stage('Start Database'){
       steps{
+        sh script: 'docker stop planhattan-mysql', returnStatus: true
+        sh script: 'docker rm planhattan-mysql', returnStatus: true
         sh 'docker-compose -p planhattan -f mysql.yaml up -d --force-recreate'
       }
     }
@@ -35,6 +37,8 @@ pipeline{
 
     stage('Run Docker Container'){
       steps{
+        sh script: 'docker stop planhattan-api', returnStatus: true
+        sh script: 'docker rm planhattan-api || true', returnStatus: true
         sh "export version=${version} && docker-compose -p planhattan -f planhattan-api.yaml up -d --force-recreate"
       }
     }
