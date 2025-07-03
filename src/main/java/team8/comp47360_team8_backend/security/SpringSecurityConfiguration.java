@@ -39,11 +39,10 @@ public class SpringSecurityConfiguration {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.headers(headers -> headers.addHeaderWriter(new StaticHeadersWriter("Access-Control-Allow-Origin", frontendUrl)));
 
         CorsConfiguration configuration = new CorsConfiguration();
-         configuration.setAllowedOrigins(Collections.singletonList(frontendUrl));
-//        configuration.setAllowedOriginPatterns(Collections.singletonList("*"));
+//         configuration.setAllowedOrigins(Collections.singletonList(frontendUrl));
+        configuration.setAllowedOriginPatterns(Collections.singletonList("*"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Collections.singletonList("*"));
         configuration.setAllowCredentials(true); // cookie allowed
