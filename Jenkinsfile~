@@ -9,7 +9,7 @@ pipeline{
 
     stage('Start Database'){
       steps{
-        sh 'docker-compose -p planhattan -f mysql.yaml up -d'
+        sh 'docker-compose -p planhattan -f mysql.yaml up -d --force-recreate --wait'
       }
     }
 
