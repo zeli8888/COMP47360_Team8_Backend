@@ -32,7 +32,6 @@ pipeline{
         sh "docker build -t planhattan-api:${version} ."
         sh "docker tag planhattan-api:${version} zeli8888/planhattan-api:${version}"
         sh "docker push zeli8888/planhattan-api:${version}"
-        sh "docker image prune -f"
       }
     }
 
