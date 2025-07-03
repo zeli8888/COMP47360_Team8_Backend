@@ -206,6 +206,16 @@ public class UserServiceImpl implements UserService, UserDetailsService, OAuth2U
         return getUserWithoutIdPassword(user);
     }
 
+    private User getUserWithoutIdPassword(User user) {
+        String pictureUri = user.getUserPicture();
+        if (pictureUri != null && !pictureUri.startsWith("http")) {
+            // add app context only if it is a local file (not a remote url or null)
+            pictureUri = ServletUriComponentsBuilder.fromCurrentContextPath().path("/user/picture/{pictureUrl}").
+                    buildAndExpand(pictureUri).toUri().toString();
+        }
+        return new User(null, null, user.getEmail(), user.getUserName(), pictureUri);
+    }
+
     @Override
     public void deleteUser() {
         User user = getUserFromAuthentication();
@@ -289,16 +299,6 @@ public class UserServiceImpl implements UserService, UserDetailsService, OAuth2U
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         CustomUserDetails userDetail = (CustomUserDetails) authentication.getPrincipal();
         return userRepository.findById(userDetail.getUserId()).orElseThrow(() -> new UsernameNotFoundException("User not found"));
-    }
-
-    private User getUserWithoutIdPassword(User user) {
-        String pictureUri = user.getUserPicture();
-        if (pictureUri != null && !pictureUri.startsWith("http")) {
-            // add app context only if it is a local file (not a remote url or null)
-            pictureUri = ServletUriComponentsBuilder.fromCurrentContextPath().path("/user/picture/{pictureUrl}").
-                    buildAndExpand(pictureUri).toUri().toString();
-        }
-        return new User(null, null, user.getEmail(), user.getUserName(), pictureUri);
     }
 
     private void validateEmail(String email) {
