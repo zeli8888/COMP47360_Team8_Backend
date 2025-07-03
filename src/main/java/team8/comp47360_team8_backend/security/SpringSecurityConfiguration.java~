@@ -38,6 +38,11 @@ public class SpringSecurityConfiguration {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+<<<<<<< HEAD
+//        http.headers(headers -> headers.addHeaderWriter(new StaticHeadersWriter("Access-Control-Allow-Origin", frontendUrl)));
+        http.headers(headers -> headers.addHeaderWriter(new StaticHeadersWriter("Access-Control-Allow-Origin", "*")));
+=======
+>>>>>>> master
 
         CorsConfiguration configuration = new CorsConfiguration();
         // allow all origins, only for development

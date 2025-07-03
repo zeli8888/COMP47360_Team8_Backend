@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @Author : Ze Li
- * @Date : 29/06/2025 13:56
+ * @Date : 03/07/2025 18:32
  * @Version : V1.0
  * @Description :
  */
@@ -21,18 +21,18 @@ class UserPlanControllerTest {
     }
 
     @Test
-    void deleteUserPlan() {
-    }
-
-    @Test
-    void updateUserPlan() {
-    }
-
-    @Test
     void testCreateUserPlan() {
     }
 
     @Test
+    void deleteUserPlan() {
+    }
+
+    @Test
     void testDeleteUserPlan() {
+    }
+
+    @Test
+    void updateUserPlan() {
     }
 }

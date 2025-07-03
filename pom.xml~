@@ -58,9 +58,15 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
         <dependency>
+<<<<<<< HEAD
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-oauth2-client</artifactId>
             <version>3.1.5</version> <!-- 与 Spring Boot 主版本一致 -->
+=======
+            <groupId>org.springframework.session</groupId>
+            <artifactId>spring-session-core</artifactId>
+            <version>3.5.0</version>
+>>>>>>> master
         </dependency>
     </dependencies>
 
