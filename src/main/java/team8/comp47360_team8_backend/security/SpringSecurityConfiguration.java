@@ -44,6 +44,7 @@ public class SpringSecurityConfiguration {
         DefaultCookieSerializer serializer = new DefaultCookieSerializer();
         serializer.setSameSite("None"); // allow cross-site cookies
         serializer.setUseSecureCookie(true); // only send over https, this is necessary for cross-site cookies
+        serializer.setCookiePath("/");  // force all cookie paths to be "/"
         return serializer;
     }
 
