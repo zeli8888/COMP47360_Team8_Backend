@@ -1,7 +1,7 @@
 services:
 
   planhattan-api:
-    image: zeli8888/planhattan-api:${VERSION}
+    image: zeli8888/planhattan-api:${version}
     container_name: planhattan-api
     ports:
       - 8000:8000
@@ -13,6 +13,8 @@ services:
       - OPEN_WEATHER_KEY=${OPEN_WEATHER_KEY}
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
       - PLANHATTAN_MYSQL_URL=jdbc:mysql://planhattan-mysql:3306/comp47360
+      - GOOGLE_OAUTH2_CLIENT_ID=${GOOGLE_OAUTH2_CLIENT_ID}
+      - 
 
 networks:
   planhattan-network:
