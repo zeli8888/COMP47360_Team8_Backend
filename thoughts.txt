@@ -1,0 +1,30 @@
+user ==> login ==> authenticated
+authenticated user ==> login ==> into another account
+authenticated user ==> google login ==>
+                                        check google account id
+                                                                ==> null ==> google id not exist in database ==> link google account
+                                                                         ==> googlie id already exist       ==> login into another account
+
+                                    simplied version            ==> exist ==> login into another acount
+
+
+
+
+
+                                    too complex, not taken                ==> exist ==> same google id ==> update google info
+                                                                          ==> another google id ==> not exist in database ==> change google account
+                                                                                                ==> already exist in database ==> merge account or login into another account?
+
+
+                                    
+                                    
+google login process:
+
+    frontend: ==> redirect to backend http://localhost:8000/api/oauth2/authorization/google
+                                ==> backend redirect to google https://accounts.google.com/o/oauth2/v2/auth
+                                        ?response_type=code&client_id=your-client-id&redirect_uri=http://localhost:8000/login/oauth2/code/google&scope=openid%20profile%20email&state=xxx
+                                                    ==> user login on google page
+                                                                ==> google generate authorization code, and redirect to backend http://localhost:8000/login/oauth2/code/google?code=xxx&state=xxx
+                                                                                        ==> backend further POST https://oauth2.googleapis.com/token with authorization code to get access token
+                                                                                        ==> backend further GET https://www.googleapis.com/oauth2/v3/userinfo with access code to get user info
+                                                                                        ==> backend store authentication info into session cookie and redict to frontend page

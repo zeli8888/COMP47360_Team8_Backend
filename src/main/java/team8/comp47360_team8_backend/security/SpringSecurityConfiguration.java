@@ -95,6 +95,7 @@ public class SpringSecurityConfiguration {
 
         http.formLogin(formLogin -> formLogin
                 .loginPage(frontendUrl+"login")
+                .loginProcessingUrl("/login")
                 .successHandler((request, response, authentication) -> {response.setStatus(HttpServletResponse.SC_OK);})
                 .failureHandler((request, response, exception) -> {response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);})
         );

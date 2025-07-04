@@ -1,11 +1,14 @@
 package team8.comp47360_team8_backend.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -71,8 +74,10 @@ public class UserController {
     }
 
     @DeleteMapping("/user")
-    public ResponseEntity<Void> deleteUser() {
+    public ResponseEntity<Void> deleteUser(HttpServletRequest request, HttpServletResponse response) {
         userService.deleteUser();
+        SecurityContextLogoutHandler logoutHandler = new SecurityContextLogoutHandler();
+        logoutHandler.logout(request, response, SecurityContextHolder.getContext().getAuthentication());
         return ResponseEntity.noContent().build();
     }
 

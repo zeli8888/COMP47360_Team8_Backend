@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @Author : Ze Li
- * @Date : 03/07/2025 18:33
+ * @Date : 04/07/2025 16:22
  * @Version : V1.0
  * @Description :
  */
@@ -14,6 +14,10 @@ class UserServiceImplTest {
 
     @Test
     void loadUserByUsername() {
+    }
+
+    @Test
+    void loadUser() {
     }
 
     @Test

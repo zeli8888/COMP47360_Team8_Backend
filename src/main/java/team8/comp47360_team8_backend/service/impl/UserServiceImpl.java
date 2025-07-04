@@ -95,21 +95,30 @@ public class UserServiceImpl implements UserService, UserDetailsService, OAuth2U
     @Override
     @Transactional
     public OAuth2User loadUser(OAuth2UserRequest request) throws OAuth2AuthenticationException {
-        // Get User Info from Google
+        // Get User Info from Google with access_token
         OAuth2User oauthUser = delegate.loadUser(request);
-
         String googleId = oauthUser.getAttribute("sub");
         String email = oauthUser.getAttribute("email");
         String pictureUrl = oauthUser.getAttribute("picture");
         String userName = oauthUser.getAttribute("given_name");
 //        String fullName = oauthUser.getAttribute("name");
+        if (googleId == null) throw new UsernameNotFoundException("Google ID cannot be null");
 
         // Check if the user already exists by Google ID
-        if (googleId == null) throw new UsernameNotFoundException("Google ID cannot be null");
         User localUser = userRepository.findByGoogleId(googleId).orElse(null);
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        // Google user not registered and user is logged in
+        if (localUser == null && authentication != null && authentication.getPrincipal() instanceof CustomUserDetails userDetail) {
+            User currentUser = userRepository.findById(userDetail.getUserId()).orElseThrow(() -> new UsernameNotFoundException("Invalid user authentication state!"));
+            // User without google id should link with new Google Account
+            // User already has google id should create new Google Account
+            localUser = currentUser.getGoogleId() == null ? currentUser: null;
+        }
+
         if (localUser != null) {
             // Update user email
-            if (email == null || (!localUser.getEmail().equals(email) && userRepository.findByEmail(email).isEmpty())) {
+            String localEmail = localUser.getEmail();
+            if (email == null || localEmail == null || (!localEmail.equals(email) && userRepository.findByEmail(email).isEmpty())) {
                 localUser.setEmail(email);
             }
             // Update user picture
@@ -117,6 +126,8 @@ public class UserServiceImpl implements UserService, UserDetailsService, OAuth2U
                 deleteUserPicture(localUser.getUserPicture());
                 localUser.setUserPicture(pictureUrl);
             }
+            // Set google id
+            localUser.setGoogleId(googleId);
             userRepository.save(localUser);
         } else {
             // Create a new user
@@ -247,7 +258,7 @@ public class UserServiceImpl implements UserService, UserDetailsService, OAuth2U
 
             // Update the user's picture in the database
             String oldPictureName = user.getUserPicture();
-            if (!oldPictureName.equals(fileName)) {
+            if (!fileName.equals(oldPictureName)) {
                 deleteUserPicture(oldPictureName);
             }
             user.setUserPicture(fileName);
