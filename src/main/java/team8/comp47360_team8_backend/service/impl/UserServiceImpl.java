@@ -101,7 +101,7 @@ public class UserServiceImpl implements UserService, UserDetailsService, OAuth2U
         String googleId = oauthUser.getAttribute("sub");
         String email = oauthUser.getAttribute("email");
         String pictureUrl = oauthUser.getAttribute("picture");
-//        String userName = oauthUser.getAttribute("given_name");
+        String userName = oauthUser.getAttribute("given_name");
 //        String fullName = oauthUser.getAttribute("name");
 
         // Check if the user already exists by Google ID
@@ -130,10 +130,11 @@ public class UserServiceImpl implements UserService, UserDetailsService, OAuth2U
         Set<GrantedAuthority> authorities = new HashSet<>();
         // Add a default role directly without the ROLE_ prefix
         authorities.add(new SimpleGrantedAuthority("ROLE_USER")); // replace "USER" with your actual default role
+        // Use given_name as temporary username and password for constructor of CustomUserDetails, won't be used for authentication
         return new CustomUserDetails(
                 oauthUser,
-                localUser.getUserName(),
-                localUser.getPassword(),
+                userName,
+                userName,
                 localUser.getId(),
                 authorities
         );

@@ -40,9 +40,7 @@ public class SpringSecurityConfiguration {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         CorsConfiguration configuration = new CorsConfiguration();
-        // allow all origins, only for development
-//         configuration.setAllowedOrigins(Collections.singletonList(frontendUrl));
-        configuration.setAllowedOriginPatterns(Collections.singletonList("*"));
+        configuration.setAllowedOrigins(Collections.singletonList(frontendUrl));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Collections.singletonList("*"));
         configuration.setAllowCredentials(true); // cookie allowed
@@ -67,10 +65,10 @@ public class SpringSecurityConfiguration {
                         return !requestUri.startsWith("/user/picture/") &&
                                 (requestUri.startsWith("/user") || requestUri.startsWith("/userplans"));
                     }
-                    // allow post requests with /register, /login, /login/oauth2/code/google and /pois/recommendation endpoints
+                    // allow post requests with /register, /login and /pois/recommendation endpoints
                     if (HttpMethod.POST.matches(request.getMethod())) {
                         return !("/register".equals(requestUri) || "/login".equals(requestUri)
-                                || "/pois/recommendation".equals(requestUri) || "/login/oauth2/code/google".equals(requestUri));
+                                || "/pois/recommendation".equals(requestUri));
                     }
                     // protect other post/put/delete requests
                     return true;
@@ -85,9 +83,9 @@ public class SpringSecurityConfiguration {
                         .requestMatchers("/pois/**").permitAll()
                         .requestMatchers("/zones/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/user/picture/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/oauth2/authorization/google").permitAll()
                         .requestMatchers(HttpMethod.POST, "/register").permitAll()
                         .requestMatchers(HttpMethod.POST, "/login").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/login/oauth2/code/google").permitAll()
                         .requestMatchers(HttpMethod.POST, "/logout`").authenticated()
                         .requestMatchers(HttpMethod.GET, "/csrf-token").authenticated()
                         .requestMatchers("/user/**").authenticated()
@@ -101,7 +99,10 @@ public class SpringSecurityConfiguration {
                 .failureHandler((request, response, exception) -> {response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);})
         );
 
-        http.oauth2Login(oauth2 -> oauth2.defaultSuccessUrl(frontendUrl));
+        http.oauth2Login(oauth2 -> oauth2
+                .loginPage(frontendUrl+"login")
+                .defaultSuccessUrl(frontendUrl)
+        );
 
         http.logout(logout -> logout
                 // URL to trigger logout, Post request
