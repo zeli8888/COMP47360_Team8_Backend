@@ -46,7 +46,8 @@ public class UserPlan {
         this.longitude = longitude;
     }
 
-    public UserPlan(Long userPlanId, String poiName, ZonedDateTime time, String busyness, double latitude, double longitude, User user) {
+    public UserPlan(Long userPlanId, String poiName, ZonedDateTime time, String busyness, double latitude,
+            double longitude, User user) {
         this.userPlanId = userPlanId;
         this.poiName = poiName;
         this.time = time;
