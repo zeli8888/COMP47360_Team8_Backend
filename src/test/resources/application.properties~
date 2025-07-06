@@ -14,7 +14,6 @@ spring.datasource.username=root
 spring.datasource.password=${MYSQL_PASSWORD}
 spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQL8Dialect
 spring.jpa.hibernate.ddl-auto=create-drop
-ml.url=${PLANHATTAN_ML_URL}
 
 spring.jpa.show-sql=true
 spring.jpa.properties.hibernate.format_sql=true

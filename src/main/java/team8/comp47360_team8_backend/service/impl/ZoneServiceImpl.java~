@@ -86,8 +86,6 @@ public class ZoneServiceImpl implements ZoneService {
 
     @Override
     public List<String> predictZoneBusyness(List<ZonedDateTime> zonedDateTimeList, Long zoneId) {
-        List<String> busynessList = new ArrayList<>();
-
         try {
             HashMap<String, Object> requestBody = new HashMap<>();
             requestBody.put("zoneId", zoneId);
@@ -112,9 +110,19 @@ public class ZoneServiceImpl implements ZoneService {
                 busynessList = (List<String>) responseBody.get("busyness");
             }
         } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Failed to predict busyness, please try again later.");
+            throw new ResponseStatusException(
+                    HttpStatus.SERVICE_UNAVAILABLE,
+                    "服务暂时不可用，请稍后再试。如持续出现该问题，请联系系统管理员。"
+            );
         }
 
+
+        // to integrate with the ML model, one fixed zone for multiple times
+        ArrayList<String> busynessList = new ArrayList<>(zonedDateTimeList.size());
+        String[] busynessLevel = {"low", "medium", "high"};
+        for (int i = 0; i < zonedDateTimeList.size(); i++) {
+            busynessList.add(busynessLevel[i%3]);
+        }
         return busynessList;
     }
 }
