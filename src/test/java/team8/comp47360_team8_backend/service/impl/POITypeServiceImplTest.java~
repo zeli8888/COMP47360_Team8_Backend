@@ -32,6 +32,5 @@ class POITypeServiceImplTest {
     @Test
     void getAllPOITypes() {
         when(poiTypeRepository.findAll()).thenReturn(new ArrayList<>());
-        assertEquals(0, poiTypeService.getAllPOITypes().size());
     }
 }

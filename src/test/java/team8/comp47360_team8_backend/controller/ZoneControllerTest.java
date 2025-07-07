@@ -1,10 +1,16 @@
 package team8.comp47360_team8_backend.controller;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import team8.comp47360_team8_backend.service.ZoneService;
 
 import java.time.ZonedDateTime;
@@ -14,17 +20,17 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
+@ExtendWith(SpringExtension.class)
+@WebMvcTest(value = ZoneController.class)
+@AutoConfigureMockMvc(addFilters = false)
+@ActiveProfiles("test")
 class ZoneControllerTest {
 
-    @Mock
+    @MockitoBean
     private ZoneService zoneService;
 
-    @InjectMocks
+    @Autowired
     private ZoneController zoneController;
-
-    public ZoneControllerTest() {
-        MockitoAnnotations.openMocks(this);
-    }
 
     @Test
     void getZoneBusyness() {

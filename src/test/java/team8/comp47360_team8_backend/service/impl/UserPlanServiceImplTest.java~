@@ -3,9 +3,9 @@ package team8.comp47360_team8_backend.service.impl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
+import org.mockito.Spy;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
@@ -43,7 +43,7 @@ class UserPlanServiceImplTest {
     @Mock
     private UserRepository userRepository;
 
-    @InjectMocks
+    @Spy
     private UserPlanServiceImpl userPlanService = new UserPlanServiceImpl();
 
     private  CustomUserDetails expectedUserDetails;

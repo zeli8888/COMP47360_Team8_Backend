@@ -1,29 +1,30 @@
 package team8.comp47360_team8_backend.controller;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import team8.comp47360_team8_backend.model.User;
 import team8.comp47360_team8_backend.service.UserService;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.web.SecurityFilterChain;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@ExtendWith(SpringExtension.class)
 @WebMvcTest(UserController.class)
+@AutoConfigureMockMvc(addFilters = false) // disables Spring Security filters for tests
+@ActiveProfiles("test")
 class UserControllerTest {
 
     @Autowired
@@ -32,15 +33,7 @@ class UserControllerTest {
     @MockitoBean
     private UserService userService;
 
-    private User mockUser;
-
-    @BeforeEach
-    void setUp() {
-        mockUser = new User();
-
-        // Use reflection if no setters exist
-        // OR just skip this if you're not using those values in assertions
-    }
+    private User mockUser = new User();
 
     @Test
     void createUser() throws Exception {
@@ -110,13 +103,4 @@ class UserControllerTest {
                 .andExpect(status().isOk());
     }
 
-    @TestConfiguration
-    static class TestSecurityConfig {
-        @Bean
-        public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-            http.csrf().disable()
-                    .authorizeHttpRequests((authz) -> authz.anyRequest().permitAll());
-            return http.build();
-        }
-    }
 }
