@@ -22,6 +22,7 @@ public class WeatherController {
     private String weatherUrl;
     @Value("${weather.key}")
     private String weatherKey;
+    private final RestTemplate restTemplate = new RestTemplate();
 
     @GetMapping("/weather")
     public ResponseEntity<String> getWeatherData(@RequestParam(required = true) double latitude,
@@ -32,7 +33,6 @@ public class WeatherController {
                 .queryParam("appid", weatherKey)
                 .queryParam("exclude", "minutely").toUriString();
 
-        RestTemplate restTemplate = new RestTemplate();
         String jsonResponse = restTemplate.getForObject(url, String.class);
 
         return ResponseEntity.ok(jsonResponse);

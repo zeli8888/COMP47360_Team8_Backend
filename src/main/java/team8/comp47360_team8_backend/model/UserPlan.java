@@ -31,6 +31,10 @@ public class UserPlan {
     @Column(nullable = false)
     private double longitude;
 
+    private float userRating;
+
+    private String pictureUrl;
+
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JsonIgnore
     private User user;
@@ -55,6 +59,34 @@ public class UserPlan {
         this.latitude = latitude;
         this.longitude = longitude;
         this.user = user;
+    }
+
+    public UserPlan(Long userPlanId, String poiName, ZonedDateTime time, String busyness, double latitude, double longitude, float userRating, String pictureUrl, User user) {
+        this.userPlanId = userPlanId;
+        this.poiName = poiName;
+        this.time = time;
+        this.busyness = busyness;
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.userRating = userRating;
+        this.pictureUrl = pictureUrl;
+        this.user = user;
+    }
+
+    public float getUserRating() {
+        return userRating;
+    }
+
+    public void setUserRating(float userRating) {
+        this.userRating = userRating;
+    }
+
+    public String getPictureUrl() {
+        return pictureUrl;
+    }
+
+    public void setPictureUrl(String pictureUrl) {
+        this.pictureUrl = pictureUrl;
     }
 
     public Long getUserPlanId() {

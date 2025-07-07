@@ -29,10 +29,6 @@ public class POI {
     @Column(nullable = false)
     private double longitude;
 
-    private float userRating;
-
-    private String pictureUrl;
-
     @ManyToOne(fetch = FetchType.EAGER, optional = false, cascade = {
             CascadeType.PERSIST,
             CascadeType.MERGE,
@@ -66,34 +62,6 @@ public class POI {
         this.longitude = longitude;
         this.zone = zone;
         this.poiType = poiType;
-    }
-
-    public POI(Long poiId, String poiName, String poiDescription, double latitude, double longitude, float userRating, String pictureUrl, Zone zone, POIType poiType) {
-        this.poiId = poiId;
-        this.poiName = poiName;
-        this.poiDescription = poiDescription;
-        this.latitude = latitude;
-        this.longitude = longitude;
-        this.userRating = userRating;
-        this.pictureUrl = pictureUrl;
-        this.zone = zone;
-        this.poiType = poiType;
-    }
-
-    public float getUserRating() {
-        return userRating;
-    }
-
-    public void setUserRating(float userRating) {
-        this.userRating = userRating;
-    }
-
-    public String getPictureUrl() {
-        return pictureUrl;
-    }
-
-    public void setPictureUrl(String pictureUrl) {
-        this.pictureUrl = pictureUrl;
     }
 
     public String getPoiName() {
