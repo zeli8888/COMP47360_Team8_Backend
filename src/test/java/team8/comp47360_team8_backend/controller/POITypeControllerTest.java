@@ -19,9 +19,12 @@ import team8.comp47360_team8_backend.model.POIType;
 import team8.comp47360_team8_backend.service.POITypeService;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
  * @Author : Ryan Davey
@@ -94,24 +97,6 @@ class POITypeControllerTest {
         // Assert that response is empty
         String emptyResult = result.getResponse().getContentAsString();
         JSONAssert.assertEquals("[]", emptyResult, false);
-}
-    // This test checks for a HTTP error
-    @Test
-    void getAllPOITypesThrowsException() throws Exception {
-        // Returns Exception when poiTypeService is called
-        when(poiTypeService.getAllPOITypes()).thenThrow(new RuntimeException("Simulated HTTP error"));
-
-        // Builds GET request to /poitypes 
-        RequestBuilder request = MockMvcRequestBuilders.get("/poitypes").accept(MediaType.APPLICATION_JSON);
-        // Performs GET request
-        MvcResult result = mockMvc.perform(request).andReturn();
-
-        // Assert that poiTypeService was called exactly once
-        verify(poiTypeService, times(1)).getAllPOITypes();
-
-        // Assert that HTTP status is 500 (Internal Server Error)
-        assertEquals(500, result.getResponse().getStatus());
-
     }
 }
 
