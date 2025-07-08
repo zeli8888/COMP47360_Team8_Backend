@@ -228,7 +228,7 @@ public class UserServiceImpl implements UserService, UserDetailsService, OAuth2U
 
     @Override
     public String updateUserPicture(MultipartFile file) {
-        if (file.isEmpty() || file.getOriginalFilename() == null) {
+        if (file.isEmpty() || file.getOriginalFilename() == null || file.getOriginalFilename().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Please select a file to upload.");
         }
 
@@ -273,13 +273,12 @@ public class UserServiceImpl implements UserService, UserDetailsService, OAuth2U
     public Resource getUserPicture(String filename) {
         Path filePath = Paths.get(uploadPath).resolve(filename);
         if (Files.exists(filePath) && Files.isReadable(filePath)) {
-            Resource resource;
             try {
-                resource = new UrlResource(filePath.toUri());
+                Resource resource = new UrlResource(filePath.toUri());
+                if (resource.exists()) return resource;
             } catch (MalformedURLException e) {
                 throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to create URL resource for file: " + filename, e);
             }
-            if (resource.exists()) return resource;
         }
         throw new ResponseStatusException(HttpStatus.NOT_FOUND, "File not found.");
     }
@@ -303,7 +302,7 @@ public class UserServiceImpl implements UserService, UserDetailsService, OAuth2U
         return userRepository.findById(userDetail.getUserId()).orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 
-    private User getUserWithoutIdPassword(User user) {
+    User getUserWithoutIdPassword(User user) {
         String pictureUri = user.getUserPicture();
         if (pictureUri != null && !pictureUri.startsWith("http")) {
             // add app context only if it is a local file (not a remote url or null)
@@ -313,7 +312,7 @@ public class UserServiceImpl implements UserService, UserDetailsService, OAuth2U
         return new User(null, null, user.getEmail(), user.getUserName(), pictureUri);
     }
 
-    private void validateEmail(String email) {
+    void validateEmail(String email) {
         String emailRegex = "^((?!\\.)[\\w\\-_.]*[^.])(@\\w+)(\\.\\w+(\\.\\w+)?[^.\\W])$";
         Pattern pattern = Pattern.compile(emailRegex);
         Matcher matcher = pattern.matcher(email);
@@ -321,7 +320,7 @@ public class UserServiceImpl implements UserService, UserDetailsService, OAuth2U
         if (userRepository.findByEmail(email).isPresent()) throw new EmailAlreadyExistException(email);
     }
 
-    private void validateUsername(String userName) {
+    void validateUsername(String userName) {
         // This example allows alphanumeric characters, underscores, and hyphens, with a length between 3 and 16 characters
         String usernameRegex = "^[a-zA-Z0-9_-]{3,16}$";
         Pattern pattern = Pattern.compile(usernameRegex);
@@ -330,7 +329,7 @@ public class UserServiceImpl implements UserService, UserDetailsService, OAuth2U
         if (userRepository.findByUserName(userName).isPresent()) throw new UserAlreadyExistException(userName);
     }
 
-    private boolean isAllowedContentType(String contentType) {
+    boolean isAllowedContentType(String contentType) {
         for (String allowedType : ALLOWED_CONTENT_TYPES) {
             if (allowedType.equals(contentType)) {
                 return true;
