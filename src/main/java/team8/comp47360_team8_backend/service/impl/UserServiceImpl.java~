@@ -284,7 +284,7 @@ public class UserServiceImpl implements UserService, UserDetailsService, OAuth2U
         throw new ResponseStatusException(HttpStatus.NOT_FOUND, "File not found.");
     }
 
-    void deleteUserPicture(String filename) {
+    private void deleteUserPicture(String filename) {
         if (filename != null && !filename.startsWith("http")) {
             Path filePath = Paths.get(uploadPath).resolve(filename);
             if (Files.exists(filePath)) {
