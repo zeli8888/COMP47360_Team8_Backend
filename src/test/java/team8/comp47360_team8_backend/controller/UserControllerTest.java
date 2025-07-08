@@ -2,6 +2,7 @@ package team8.comp47360_team8_backend.controller;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.MockedStatic;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -15,6 +16,11 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import team8.comp47360_team8_backend.model.User;
 import team8.comp47360_team8_backend.service.UserService;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -58,17 +64,27 @@ class UserControllerTest {
 
     @Test
     void getUserPicture() throws Exception {
-        Resource picture = new ByteArrayResource("dummy image".getBytes()) {
-            @Override
-            public String getFilename() {
-                return "test.jpg";
-            }
-        };
+        // mock static Paths and Files
+        Resource resource = mock(Resource.class);
+        when(userService.getUserPicture(anyString())).thenReturn(resource);
+        File file = mock(File.class);
+        when(resource.getFile()).thenReturn(file);
+        Path path = mock(Path.class);
+        when(file.toPath()).thenReturn(path);
 
-        when(userService.getUserPicture("test.jpg")).thenReturn(picture);
+        // probeContentType successfully
+        try (MockedStatic<Files> filesMockedStatic = mockStatic(Files.class)) {
+            filesMockedStatic.when(()->Files.probeContentType(path)).thenReturn("image/jpeg");
+            mockMvc.perform(get("/user/picture/test.jpg"))
+                    .andExpect(status().isOk());
+        }
 
-        mockMvc.perform(get("/user/picture/test.jpg"))
-                .andExpect(status().isOk());
+        // IOException while probing content type
+        try (MockedStatic<Files> filesMockedStatic = mockStatic(Files.class)) {
+            filesMockedStatic.when(()->Files.probeContentType(path)).thenThrow(IOException.class);
+            mockMvc.perform(get("/user/picture/test.jpg"))
+                    .andExpect(status().isOk());
+        }
     }
 
     @Test

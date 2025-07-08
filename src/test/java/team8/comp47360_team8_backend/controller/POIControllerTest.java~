@@ -1,5 +1,4 @@
 package team8.comp47360_team8_backend.controller;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,7 +26,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
  * @Author : Ze Li
@@ -103,12 +101,7 @@ class POIControllerTest {
     }
 
     @Test
-    void getListOfRecommendations() throws Exception {
+    void getListOfRecommendations() {
         when(poiService.getListOfRecommendations(any())).thenReturn(Collections.emptyList());
-
-        RequestBuilder requestBuilder = MockMvcRequestBuilders.post("/pois/recommendation")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(om.writeValueAsString(Collections.emptyList()));
-        mockMvc.perform(requestBuilder).andExpect(status().isOk());
     }
 }

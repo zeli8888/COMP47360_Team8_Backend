@@ -7,10 +7,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.web.server.ResponseStatusException;
 import team8.comp47360_team8_backend.dto.POIBusynessDistanceRecommendationDTO;
 import team8.comp47360_team8_backend.dto.RecommendationInputDTO;
+import team8.comp47360_team8_backend.exception.POITypeNotFoundException;
 import team8.comp47360_team8_backend.model.POI;
 import team8.comp47360_team8_backend.model.POIType;
 import team8.comp47360_team8_backend.model.UserPlan;
@@ -77,6 +80,10 @@ class POIServiceImplTest {
         Set<POI> result = poiService.getPOIsByPOITypeName("restaurant");
         assertEquals(1, result.size());
         assertTrue(result.contains(poi1));
+
+        // Non-existent POI type
+        when(poiTypeRepository.getByPoiTypeName("nonexistent")).thenReturn(Optional.empty());
+        assertThrows(POITypeNotFoundException.class, () -> poiService.getPOIsByPOITypeName("nonexistent"));
     }
 
     @Test
@@ -100,6 +107,12 @@ class POIServiceImplTest {
         assertEquals(2, result.size());
         assertEquals("POI1", result.get(0).getPoi().getPoiName());
         assertTrue(result.get(0).getRecommendation() > result.get(1).getRecommendation());
+
+        // Test different transit types
+        poiService.assignBusynessDistanceForPOIs("restaurant", lastPOI, zoneBusyness, null, 2);
+        poiService.assignBusynessDistanceForPOIs("restaurant", lastPOI, zoneBusyness, "cycle", 2);
+        poiService.assignBusynessDistanceForPOIs("restaurant", lastPOI, zoneBusyness, "bus", 2);
+        poiService.assignBusynessDistanceForPOIs("restaurant", lastPOI, zoneBusyness, "car", 1);
     }
 
     @Test
@@ -138,6 +151,18 @@ class POIServiceImplTest {
         assertEquals("Start", result.get(0).getPoiName());
         assertEquals("POI1", result.get(1).getPoiName());
         assertEquals("POI2", result.get(2).getPoiName());
+
+        // Start Location invalid
+        List<RecommendationInputDTO> invalidInputs = new ArrayList<>();
+        invalidInputs.add(new RecommendationInputDTO(
+                null, null, null, null, ZonedDateTime.now().plusHours(1), "walk", "restaurant"
+        ));
+        ResponseStatusException responseStatusException = assertThrows(ResponseStatusException.class, () -> poiService.getListOfRecommendations(invalidInputs));
+        assertEquals(HttpStatus.BAD_REQUEST, responseStatusException.getStatusCode());
+
+        // empty input
+        ResponseStatusException responseStatusException2 = assertThrows(ResponseStatusException.class, () -> poiService.getListOfRecommendations(new ArrayList<>()));
+        assertEquals(HttpStatus.BAD_REQUEST, responseStatusException2.getStatusCode());
     }
 
     @Test

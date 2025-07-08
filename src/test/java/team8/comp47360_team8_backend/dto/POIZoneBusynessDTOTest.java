@@ -41,4 +41,9 @@ class POIZoneBusynessDTOTest {
         assertEquals(newDtoList, zoneDto.getBusynessDistanceRecommendationDTOS());
         assertEquals(newZoneMap, zoneDto.getZoneBusynessMap());
     }
+
+    @Test
+    void testNoArgsConstructor() {
+        POIZoneBusynessDTO dto = new POIZoneBusynessDTO();
+    }
 }

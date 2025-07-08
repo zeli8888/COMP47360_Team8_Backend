@@ -39,6 +39,14 @@ class POITest {
         assertEquals("Art Museum", poi.getPoiDescription());
         assertEquals(40.7128, poi.getLatitude());
         assertEquals(-74.0060, poi.getLongitude());
+
+        poi.setZone(new Zone());
+        poi.setPoiType(new POIType());
+        poi.setPoiId(2L);
+        poi.setUserRating(4.0F);
+        assertEquals(4.0F, poi.getUserRating(), 0.1);
+        poi.setPictureUrl("picture2.jpg");
+        assertEquals("picture2.jpg", poi.getPictureUrl());
     }
 
     @Test
@@ -46,5 +54,17 @@ class POITest {
         POI poi = new POI(34.05, -118.25);
         assertEquals(34.05, poi.getLatitude());
         assertEquals(-118.25, poi.getLongitude());
+    }
+
+    @Test
+    void testNoArgsConstructor() {
+        POI poi = new POI();
+    }
+
+    @Test
+    void testAllArgsConstructor() {
+        POI poi = new POI(1L, "Library", "Public Library", 53.3498, -6.2603, 5.0F, "picture.jpg", null, null);
+        assertEquals(5.0F, poi.getUserRating(), 0.1);
+        assertEquals("picture.jpg", poi.getPictureUrl());
     }
 }

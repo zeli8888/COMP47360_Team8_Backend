@@ -46,7 +46,7 @@ class UserPlanTest {
     }
 
     @Test
-    void testFullConstructor() {
+    void testConstructor() {
         ZonedDateTime now = ZonedDateTime.now();
         User user = new User();
         UserPlan plan = new UserPlan(99L, "POI Full", now, "Medium", 3.3, 4.4, user);
@@ -58,5 +58,22 @@ class UserPlanTest {
         assertEquals(3.3, plan.getLatitude());
         assertEquals(4.4, plan.getLongitude());
         assertEquals(user, plan.getUser());
+    }
+
+    @Test
+    void testFullConstructor() {
+        ZonedDateTime now = ZonedDateTime.now();
+        User user = new User();
+        UserPlan plan = new UserPlan(99L, "POI Full", now, "Medium", 3.3, 4.4, 7.0F, "picture.jpg", user);
+
+        assertEquals(99L, plan.getUserPlanId());
+        assertEquals("POI Full", plan.getPoiName());
+        assertEquals(now, plan.getTime());
+        assertEquals("Medium", plan.getBusyness());
+        assertEquals(3.3, plan.getLatitude());
+        assertEquals(4.4, plan.getLongitude());
+        assertEquals(user, plan.getUser());
+        assertEquals(7.0F, plan.getUserRating(), 0.1);
+        assertEquals("picture.jpg", plan.getPictureUrl());
     }
 }

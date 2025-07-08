@@ -56,5 +56,6 @@ class ZoneControllerTest {
         // predictedHours is null
         ResponseEntity<List<String>> response2 = zoneController.getZoneBusyness(zoneId, now, null);
         assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(mockBusyness, response.getBody());
     }
 }
