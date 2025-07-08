@@ -23,6 +23,10 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.springframework.web.util.UriComponentsBuilder;
+import team8.comp47360_team8_backend.exception.EmailAlreadyExistException;
+import team8.comp47360_team8_backend.exception.UserAlreadyExistException;
 import team8.comp47360_team8_backend.model.User;
 import team8.comp47360_team8_backend.repository.UserRepository;
 import team8.comp47360_team8_backend.security.CustomUserDetails;
@@ -31,7 +35,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -274,6 +277,12 @@ class UserServiceImplTest {
             User result = userService.getUser();
             assertEquals(testUser, result);
         }
+
+        // authenticated user not found
+        try (MockedStatic<SecurityContextHolder> securityContextHolder = mockSecurityContext()){
+            when(userRepository.findById(1L)).thenReturn(Optional.empty());
+            assertThrows(UsernameNotFoundException.class, () -> userService.getUser());
+        }
     }
 
     @Test
@@ -421,5 +430,122 @@ class UserServiceImplTest {
             }
 
         }
+    }
+
+    @Test
+    void deleteUserPicture() {
+        // mock static Paths and Files
+        Path path = mock(Path.class);
+        when(path.resolve(anyString())).thenReturn(path);
+        try (MockedStatic<Paths> paths = mockStatic(Paths.class)) {
+            paths.when(() -> Paths.get(anyString())).thenReturn(path);
+            try (MockedStatic<Files> files = mockStatic(Files.class)) {
+                // normal deletion
+                files.when(() -> Files.exists(any(Path.class))).thenReturn(true);
+                files.when(() -> Files.delete(any(Path.class))).then(invocation -> null);
+                userService.deleteUserPicture("user_1_test.jpg");
+                files.verify(() -> Files.exists(any(Path.class)), times(1));
+                files.verify(() -> Files.delete(any(Path.class)), times(1));
+            }
+
+            try (MockedStatic<Files> files = mockStatic(Files.class)) {
+                // file not exist
+                files.when(() -> Files.exists(any(Path.class))).thenReturn(false);
+                userService.deleteUserPicture("user_1_test.jpg");
+                files.verify(() -> Files.exists(any(Path.class)), times(1));
+                files.verify(() -> Files.delete(any(Path.class)), times(0));
+            }
+
+            try (MockedStatic<Files> files = mockStatic(Files.class)) {
+                // deletion failed
+                files.when(() -> Files.exists(any(Path.class))).thenReturn(true);
+                files.when(() -> Files.delete(any(Path.class))).thenThrow(IOException.class);
+                ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> userService.deleteUserPicture("user_1_test.jpg"));
+                assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, exception.getStatusCode());
+                files.verify(() -> Files.exists(any(Path.class)), times(1));
+                files.verify(() -> Files.delete(any(Path.class)), times(1));
+            }
+        }
+
+        try (MockedStatic<Paths> paths = mockStatic(Paths.class)) {
+            // delete user picture with null
+            userService.deleteUserPicture(null);
+            paths.verify(() -> Paths.get(anyString()), times(0));
+        }
+
+        try (MockedStatic<Paths> paths = mockStatic(Paths.class)) {
+            // delete user picture start with http
+            userService.deleteUserPicture("http://example.com/image.jpg");
+            paths.verify(() -> Paths.get(anyString()), times(0));
+        }
+    }
+
+    @Test
+    void getUserWithoutIdPassword() {
+        // user with local picture url
+        try (MockedStatic<ServletUriComponentsBuilder> servletUriComponentsBuilderMockedStatic = mockStatic(ServletUriComponentsBuilder.class)) {
+            ServletUriComponentsBuilder servletUriComponentsBuilder = mock(ServletUriComponentsBuilder.class);
+            servletUriComponentsBuilderMockedStatic.when(ServletUriComponentsBuilder::fromCurrentContextPath).thenReturn(servletUriComponentsBuilder);
+            UriComponentsBuilder uriComponentsBuilder = UriComponentsBuilder.fromUriString("http://localhost:8080/api/user/picture/{pictureUrl}");
+            when(servletUriComponentsBuilder.path(anyString())).thenReturn(uriComponentsBuilder);
+            User user = userService.getUserWithoutIdPassword(testUser);
+            assertNull(user.getId());
+            assertNull(user.getPassword());
+            assertEquals("http://localhost:8080/api/user/picture/user_1_test.jpg", user.getUserPicture());
+        }
+
+        // user with google picture url
+        testUser.setUserPicture("http://example.com/image.jpg");
+        User user = userService.getUserWithoutIdPassword(testUser);
+        assertNull(user.getId());
+        assertNull(user.getPassword());
+        assertEquals("http://example.com/image.jpg", user.getUserPicture());
+
+        // user without picture url
+        testUser.setUserPicture(null);
+        user = userService.getUserWithoutIdPassword(testUser);
+        assertNull(user.getId());
+        assertNull(user.getPassword());
+        assertNull(user.getUserPicture());
+    }
+
+    @Test
+    void validateEmail() {
+        // valid email
+        String email = "valid_email@example.com";
+        when(userRepository.findByEmail(email)).thenReturn(Optional.empty());
+        assertDoesNotThrow(() -> userService.validateEmail(email));
+        verify(userRepository, times(1)).findByEmail(email);
+
+        // existing email
+        when(userRepository.findByEmail(email)).thenReturn(Optional.of(new User()));
+        EmailAlreadyExistException exception = assertThrows(EmailAlreadyExistException.class,
+                () -> userService.validateEmail(email));
+        verify(userRepository, times(2)).findByEmail(email);
+
+        // invalid email
+        String invalidEmail = "invalid_email";
+        UsernameNotFoundException exception2 = assertThrows(UsernameNotFoundException.class,
+                () -> userService.validateEmail(invalidEmail));
+        assertEquals("User email invalid: " + invalidEmail, exception2.getMessage());
+    }
+
+    @Test
+    void validateUsername() {
+        // valid username
+        String username = "valid_user-name";
+        when(userRepository.findByUserName(username)).thenReturn(Optional.empty());
+        assertDoesNotThrow(() -> userService.validateUsername(username));
+
+        // existing username
+        when(userRepository.findByUserName(username)).thenReturn(Optional.of(new User()));
+        UserAlreadyExistException exception = assertThrows(UserAlreadyExistException.class,
+                () -> userService.validateUsername(username));
+
+        // invalid username
+        String invalidUsername = "invalid username";
+        UsernameNotFoundException exception2 = assertThrows(UsernameNotFoundException.class,
+                () -> userService.validateUsername(invalidUsername));
+        assertEquals("User name invalid: " + invalidUsername, exception2.getMessage());
     }
 }
