@@ -3,6 +3,8 @@ server.port=8000
 server.servlet.context-path=/api
 server.forward-headers-strategy=framework
 frontend.url=https://planhattan.ddns.net/
+
+
 upload.path=uploads/
 weather.url=https://api.openweathermap.org/data/3.0/onecall
 weather.key=${OPEN_WEATHER_KEY}
@@ -14,8 +16,14 @@ spring.datasource.username=root
 spring.datasource.password=${MYSQL_PASSWORD}
 spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQL8Dialect
 spring.jpa.hibernate.ddl-auto=create-drop
+ml.url=${PLANHATTAN_ML_URL}
 
+# Google OAuth2
+spring.security.oauth2.client.registration.google.client-id=${GOOGLE_OAUTH2_CLIENT_ID}
+spring.security.oauth2.client.registration.google.client-secret=${GOOGLE_OAUTH2_CLIENT_SECRET}
+spring.security.oauth2.client.registration.google.scope=email,profile
 spring.jpa.show-sql=true
 spring.jpa.properties.hibernate.format_sql=true
+logging.level.root=DEBUG
 logging.level.org.hibernate.SQL=DEBUG
 logging.level.org.hibernate.type.descriptor.sql.BasicBinder=TRACE

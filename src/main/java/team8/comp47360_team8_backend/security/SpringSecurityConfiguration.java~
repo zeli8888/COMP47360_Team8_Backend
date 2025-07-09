@@ -63,7 +63,7 @@ public class SpringSecurityConfiguration {
                     if (HttpMethod.GET.matches(request.getMethod())) {
                         // allow get requests for public user profile pictures
                         return !requestUri.startsWith("/user/picture/") &&
-                                (requestUri.startsWith("/userplans") || requestUri.startsWith("/user"));
+                                (requestUri.startsWith("/user") || requestUri.startsWith("/userplans"));
                     }
                     // allow post requests with /register, /login and /pois/recommendation endpoints
                     if (HttpMethod.POST.matches(request.getMethod())) {
