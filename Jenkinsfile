@@ -15,10 +15,27 @@ pipeline{
       }
     }
 
+    stage('Wait for Database to Start'){
+      steps{
+        sh '''#!/bin/sh
+            max_attempts=60
+            attempt=1
+            until (docker inspect planhattan-mysql --format '{{.State.Running}}' | grep -q true &&
+                   docker exec planhattan-mysql mysqladmin ping -h localhost --silent) || [ $attempt -gt $max_attempts ];
+            do
+                echo "Attempt $attempt/$max_attempts - Database not ready yet"
+                sleep 1
+                attempt=$((attempt+1))
+            done
+            if [ $attempt -gt $max_attempts ]; then
+                echo "Database did not start within $max_attempts seconds!"
+                exit 1
+            fi'''
+      }
+    }
+
     stage('Test'){
       steps{
-        sh script: 'docker stop planhattan-api', returnStatus: true
-        sh script: 'docker rm planhattan-api || true', returnStatus: true
         sh 'mvn test'
       }
     }
@@ -40,6 +57,8 @@ pipeline{
 
     stage('Run Docker Container'){
       steps{
+        sh script: 'docker stop planhattan-api', returnStatus: true
+        sh script: 'docker rm planhattan-api || true', returnStatus: true
         sh "export version=${version} && docker-compose -p planhattan -f planhattan-api.yaml up -d --force-recreate"
       }
     }
