@@ -83,6 +83,7 @@ public class POIServiceImpl implements POIService {
 
     @Override
     public List<UserPlan> getListOfRecommendations(List<RecommendationInputDTO> recommendationInputDTOS) {
+        if (recommendationInputDTOS.isEmpty()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No recommendation input");
         RecommendationInputDTO startLocation = recommendationInputDTOS.get(0);
         if (startLocation.getLongitude() == null || startLocation.getLatitude() == null ||
                 startLocation.getZoneId() == null || startLocation.getTime() == null ||

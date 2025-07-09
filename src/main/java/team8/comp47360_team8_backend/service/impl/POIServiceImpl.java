@@ -75,8 +75,10 @@ public class POIServiceImpl implements POIService {
             }
         }
 
-        List<POIBusynessDistanceRecommendationDTO> result = new ArrayList<>(poiBusynessDistanceRecommendationDTOHeap);
-        // recommendation from high to low
+        List<POIBusynessDistanceRecommendationDTO> result = new ArrayList<>(limit);
+        while (!poiBusynessDistanceRecommendationDTOHeap.isEmpty()) {
+            result.add(poiBusynessDistanceRecommendationDTOHeap.poll());
+        }
         Collections.reverse(result);
         return result;
     }
