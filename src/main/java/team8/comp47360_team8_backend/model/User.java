@@ -13,7 +13,7 @@ import java.util.Set;
  * @Description :
  */
 @Entity
-@Table(name = "user")
+@Table(name = "${user.table.name:user}")
 public class User {
     @Id
     @GeneratedValue
