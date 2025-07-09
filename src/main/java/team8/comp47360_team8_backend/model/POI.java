@@ -29,7 +29,8 @@ public class POI {
     @Column(nullable = false)
     private double longitude;
 
-    private float userRating;
+    @Column(nullable = true)
+    private Float userRating;
 
     private String pictureUrl;
 
@@ -80,11 +81,11 @@ public class POI {
         this.poiType = poiType;
     }
 
-    public float getUserRating() {
+    public Float getUserRating() {
         return userRating;
     }
 
-    public void setUserRating(float userRating) {
+    public void setUserRating(Float userRating) {
         this.userRating = userRating;
     }
 
