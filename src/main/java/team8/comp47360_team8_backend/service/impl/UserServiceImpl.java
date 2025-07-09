@@ -37,6 +37,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -108,7 +109,8 @@ public class UserServiceImpl implements UserService, UserDetailsService, OAuth2U
         User localUser = userRepository.findByGoogleId(googleId).orElse(null);
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         // Google user not registered and user is logged in
-        if (localUser == null && authentication != null && authentication.getPrincipal() instanceof CustomUserDetails userDetail) {
+        if (localUser == null && authentication != null) {
+            CustomUserDetails userDetail = (CustomUserDetails) authentication.getPrincipal();
             User currentUser = userRepository.findById(userDetail.getUserId()).orElseThrow(() -> new UsernameNotFoundException("Invalid user authentication state!"));
             // User without google id should link with new Google Account
             // User already has google id should create new Google Account
@@ -118,8 +120,12 @@ public class UserServiceImpl implements UserService, UserDetailsService, OAuth2U
         if (localUser != null) {
             // Update user email
             String localEmail = localUser.getEmail();
-            if (email == null || localEmail == null || (!localEmail.equals(email) && userRepository.findByEmail(email).isEmpty())) {
-                localUser.setEmail(email);
+            if (!Objects.equals(localEmail, email)) {
+                if (email == null || userRepository.findByEmail(email).isPresent()) {
+                    localUser.setEmail(null);
+                } else {
+                    localUser.setEmail(email);
+                }
             }
             // Update user picture
             if (pictureUrl != null) {
@@ -196,7 +202,7 @@ public class UserServiceImpl implements UserService, UserDetailsService, OAuth2U
     @Override
     public User updateUser(User user) {
         User storedUser = getUserFromAuthentication();
-        if (user.getUserName() != null && !user.getUserName().equals(storedUser.getUserName())) {
+        if (!Objects.equals(user.getUserName(), storedUser.getUserName()) && user.getUserName() != null) {
             // update user name
             validateUsername(user.getUserName());
             storedUser.setUserName(user.getUserName());

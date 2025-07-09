@@ -142,14 +142,15 @@ class UserServiceImplTest {
         when(oAuth2User.getAttribute("given_name")).thenReturn("new_first_name");
         when(oAuth2User.getAttribute("name")).thenReturn("new_name");
 
-        // User with google id not exist
+        // User with google id not exist, will create a new google account user
         when(userRepository.findByGoogleId("new_google_id")).thenReturn(Optional.empty());
         when(userRepository.findByEmail("new@google.com")).thenReturn(Optional.empty());
         doReturn(testUser).when(userService).createUser(any(User.class));
         try (MockedStatic<SecurityContextHolder> securityContextHolder = mockSecurityContextWithoutLogin()){
             CustomUserDetails result = (CustomUserDetails) userService.loadUser(mock(OAuth2UserRequest.class));
-            verify(userService, times(1)).createUser(any(User.class));
-            assertEquals(1L, result.getUserId());
+            ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+            verify(userService, times(1)).createUser(userCaptor.capture());
+            assertNull(userCaptor.getValue().getId());
         }
 
         // User with google id not exist, but email is registered, rare case
@@ -159,10 +160,10 @@ class UserServiceImplTest {
             ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
             verify(userService, times(2)).createUser(userCaptor.capture());
             assertNull(userCaptor.getValue().getEmail());
-            assertEquals(1L, result.getUserId());
+            assertNull(userCaptor.getValue().getId());
         }
 
-        // User with google id not exist, already logged in
+        // User with google id not exist, already logged in, will link with this google account
         testUser.setEmail("local@google.com");
         when(userRepository.findByGoogleId("new_google_id")).thenReturn(Optional.empty());
         when(userRepository.findByEmail("new@google.com")).thenReturn(Optional.empty());
@@ -173,19 +174,58 @@ class UserServiceImplTest {
             ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
             verify(userRepository, times(1)).save(userCaptor.capture());
             assertEquals("new@google.com", userCaptor.getValue().getEmail());
+            assertEquals("new_google_id", userCaptor.getValue().getGoogleId());
             assertEquals(1L, result.getUserId());
         }
 
-        // User with google id not exist, already logged in, but already linked with google account
+        // User with google id not exist, already logged in, but current account already linked with other google account
+        // will create and log into this google account
         testUser.setGoogleId("new_google_id");
-        when(userRepository.findByEmail("new@google.com")).thenReturn(Optional.empty());
+        // null email test
+        when(oAuth2User.getAttribute("email")).thenReturn(null);
+        when(userRepository.findByEmail(null)).thenReturn(Optional.empty());
         try (MockedStatic<SecurityContextHolder> securityContextHolder = mockSecurityContext()){
             CustomUserDetails result = (CustomUserDetails) userService.loadUser(mock(OAuth2UserRequest.class));
-            assertEquals(1L, result.getUserId());
+            ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+            verify(userService, times(3)).createUser(userCaptor.capture());
+            assertNull(userCaptor.getValue().getId());
         }
 
-        // authenticated user not found, rare case
+        // User with google id existed, already logged in, will log into this existing account
+        when(oAuth2User.getAttribute("email")).thenReturn("new@google.com");
+        testUser.setId(2L);
+        when(userRepository.findByGoogleId("new_google_id")).thenReturn(Optional.of(testUser));
         try (MockedStatic<SecurityContextHolder> securityContextHolder = mockSecurityContext()){
+            CustomUserDetails result = (CustomUserDetails) userService.loadUser(mock(OAuth2UserRequest.class));
+            assertEquals(2L, result.getUserId());
+        }
+
+        // User with google id existed, hasn't logged in, will log into this existing account
+        when(userRepository.findByGoogleId("new_google_id")).thenReturn(Optional.of(testUser));
+        try (MockedStatic<SecurityContextHolder> securityContextHolder = mockSecurityContextWithoutLogin()){
+            CustomUserDetails result = (CustomUserDetails) userService.loadUser(mock(OAuth2UserRequest.class));
+            assertEquals(2L, result.getUserId());
+
+            // null email, null picture url
+            when(oAuth2User.getAttribute("email")).thenReturn(null);
+            when(oAuth2User.getAttribute("picture")).thenReturn(null);
+            when(userRepository.findByEmail(null)).thenReturn(Optional.of(testUser));
+            CustomUserDetails result2 = (CustomUserDetails) userService.loadUser(mock(OAuth2UserRequest.class));
+            ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+            verify(userRepository, atLeastOnce()).save(userCaptor.capture());
+            assertNull(userCaptor.getValue().getEmail());
+
+            // existed new email
+            when(oAuth2User.getAttribute("email")).thenReturn("existed_new_email@google.com");
+            when(userRepository.findByEmail("existed_new_email@google.com")).thenReturn(Optional.of(testUser));
+            CustomUserDetails result3 = (CustomUserDetails) userService.loadUser(mock(OAuth2UserRequest.class));
+            verify(userRepository, atLeastOnce()).save(userCaptor.capture());
+            assertNull(userCaptor.getValue().getEmail());
+        }
+
+        // User with google id not exist, but authenticated user not found, rare case
+        try (MockedStatic<SecurityContextHolder> securityContextHolder = mockSecurityContext()){
+            when(userRepository.findByGoogleId("new_google_id")).thenReturn(Optional.empty());
             when(userRepository.findById(1L)).thenReturn(Optional.empty());
             assertThrows(UsernameNotFoundException.class, () -> userService.loadUser(mock(OAuth2UserRequest.class)));
         }
@@ -269,6 +309,16 @@ class UserServiceImplTest {
             verify(userRepository, times(3)).save(userCaptor.capture());
             assertEquals("encoded_password", userCaptor.getValue().getPassword());
             assertEquals("tester", userCaptor.getValue().getUserName());
+
+            // userName and authenticated username both null
+            User mockUser = mock(User.class);
+            when(mockUser.getUserName()).thenReturn(null);
+            when(mockUser.getPassword()).thenReturn(null);
+            when(userRepository.findById(1L)).thenReturn(Optional.of(new User(1L, "password", "tester@gmail.com", null, null)));
+            result = userService.updateUser(mockUser);
+            verify(userRepository, times(4)).save(userCaptor.capture());
+            assertEquals("password", userCaptor.getValue().getPassword());
+            assertNull(userCaptor.getValue().getUserName());
         }
     }
 
@@ -341,12 +391,17 @@ class UserServiceImplTest {
             }
 
             // file is empty or has no name
-            MultipartFile fileNoName = new MockMultipartFile("file", null, "image/jpeg", "data".getBytes());
+            MultipartFile fileNoName = new MockMultipartFile("file", "", "image/jpeg", "data".getBytes());
             ResponseStatusException responseStatusException = assertThrows(ResponseStatusException.class, () -> userService.updateUserPicture(fileNoName));
             assertEquals(HttpStatus.BAD_REQUEST, responseStatusException.getStatusCode());
             MultipartFile fileEmpty = new MockMultipartFile("file", "test.jpg", "image/jpeg", "".getBytes());
             ResponseStatusException responseStatusException2 = assertThrows(ResponseStatusException.class, () -> userService.updateUserPicture(fileEmpty));
             assertEquals(HttpStatus.BAD_REQUEST, responseStatusException.getStatusCode());
+            MultipartFile fileNullName = mock(MultipartFile.class);
+            when(fileNullName.isEmpty()).thenReturn(false);
+            when(fileNullName.getOriginalFilename()).thenReturn(null);
+            ResponseStatusException response = assertThrows(ResponseStatusException.class, () -> userService.updateUserPicture(fileNullName));
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
 
             // file size too large
             MultipartFile fileTooLarge = new MockMultipartFile("file", "test.jpg", "image/jpeg", new byte[5242881]);
