@@ -37,7 +37,7 @@ pipeline{
     stage('Test'){
       steps{
         sh 'mvn clean install -DskipTests=true'
-        sh 'mvn test'
+        sh 'mvn test -Dspring.profiles.active=test --debug'
       }
     }
 
