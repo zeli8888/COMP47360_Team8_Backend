@@ -36,6 +36,7 @@ public class UserPlan {
     private String pictureUrl;
 
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
+    @JoinColumn(name = "user_id", nullable = false, referencedColumnName = "user_id")
     @JsonIgnore
     private User user;
 

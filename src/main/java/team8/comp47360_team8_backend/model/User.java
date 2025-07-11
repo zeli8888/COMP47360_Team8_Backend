@@ -13,7 +13,7 @@ import java.util.Set;
  * @Description :
  */
 @Entity
-@Table(name = "${user.table.name:user}")
+@Table(name = "users")
 public class User {
     @Id
     @GeneratedValue
@@ -25,7 +25,7 @@ public class User {
     @JsonIgnore
     private String googleId;
 
-    @Column(name="user_passwd", nullable = true)
+    @Column(name="user_password", nullable = true)
     private String password;
 
     @Column(name="user_email", unique = true, nullable = true)
