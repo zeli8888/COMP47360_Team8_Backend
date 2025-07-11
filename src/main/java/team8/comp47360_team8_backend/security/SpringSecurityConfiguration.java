@@ -30,8 +30,8 @@ import java.util.Collections;
 public class SpringSecurityConfiguration {
     public static final String[] excludedURLs = {"/v3/api-docs/**", "/swagger-ui/**"};
 
-    @Value("${frontend.url}")
-    private String frontendUrl;
+    @Value("${frontend.urls}")
+    private String[] frontendUrls;
 
     @Autowired
     private AuthenticationProvider authenticationProvider;
@@ -40,7 +40,7 @@ public class SpringSecurityConfiguration {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Collections.singletonList(frontendUrl));
+        configuration.setAllowedOrigins(Arrays.asList(frontendUrls));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Collections.singletonList("*"));
         configuration.setAllowCredentials(true); // cookie allowed
@@ -94,15 +94,15 @@ public class SpringSecurityConfiguration {
         );
 
         http.formLogin(formLogin -> formLogin
-                .loginPage(frontendUrl+"login")
+                .loginPage(frontendUrls[0]+"/signin")
                 .loginProcessingUrl("/login")
                 .successHandler((request, response, authentication) -> {response.setStatus(HttpServletResponse.SC_OK);})
                 .failureHandler((request, response, exception) -> {response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);})
         );
 
         http.oauth2Login(oauth2 -> oauth2
-                .loginPage(frontendUrl+"login")
-                .defaultSuccessUrl(frontendUrl)
+                .loginPage(frontendUrls[0]+"/signin")
+                .defaultSuccessUrl(frontendUrls[0])
         );
 
         http.logout(logout -> logout

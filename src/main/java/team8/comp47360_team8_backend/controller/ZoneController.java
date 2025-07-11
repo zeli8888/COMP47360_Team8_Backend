@@ -11,6 +11,7 @@ import team8.comp47360_team8_backend.service.ZoneService;
 
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -35,6 +36,12 @@ public class ZoneController {
             futureDateTimes.add(dateTime.plusHours(i));
         }
         List<String> busyness = zoneService.predictZoneBusyness(futureDateTimes, zoneId);
+        return ResponseEntity.ok(busyness);
+    }
+
+    @GetMapping("/zones")
+    public ResponseEntity<HashMap<Long, String>> getZoneBusyness(@RequestParam(required = true) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime dateTime) {
+        HashMap<Long, String> busyness = zoneService.predictZoneBusyness(dateTime);
         return ResponseEntity.ok(busyness);
     }
 }

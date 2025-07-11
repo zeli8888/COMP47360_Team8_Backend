@@ -30,6 +30,9 @@
 #### Zone busyness API:
 - predict one zone's busyness for continuous predictedHours after a specific time
 ![alt text](docs/get_zones.png)
+#### All Zone busyness API:
+- predict all zones' busyness for a specific time
+![alt text](docs/get_zones_all.png)
 #### Weather API:
 - check https://openweathermap.org/api/one-call-3 for details
 ![alt text](docs/get_weather.png)

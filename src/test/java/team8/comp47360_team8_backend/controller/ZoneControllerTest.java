@@ -14,6 +14,7 @@ import team8.comp47360_team8_backend.service.ZoneService;
 
 import java.time.ZonedDateTime;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -54,5 +55,19 @@ class ZoneControllerTest {
         // predictedHours is null
         ResponseEntity<List<String>> response2 = zoneController.getZoneBusyness(zoneId, now, null);
         assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    void getAllZoneBusyness() {
+        ZonedDateTime now = ZonedDateTime.now();
+        HashMap<Long, String> zoneBusynessMap = new HashMap<>();
+        zoneBusynessMap.put(1L, "low");
+        zoneBusynessMap.put(2L, "medium");
+        zoneBusynessMap.put(3L, "high");
+        when(zoneService.predictZoneBusyness(any(ZonedDateTime.class))).thenReturn(zoneBusynessMap);
+
+        ResponseEntity<HashMap<Long, String>> response = zoneController.getZoneBusyness(now);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(zoneBusynessMap, response.getBody());
     }
 }
