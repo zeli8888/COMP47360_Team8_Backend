@@ -14,6 +14,7 @@ import team8.comp47360_team8_backend.repository.POITypeRepository;
 import team8.comp47360_team8_backend.service.POIService;
 import team8.comp47360_team8_backend.service.ZoneService;
 
+import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.*;
 
@@ -92,37 +93,382 @@ public class POIServiceImpl implements POIService {
                 startLocation.getPoiName() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Start location is not valid");
         }
-        ArrayList<UserPlan> userPlans = new ArrayList<>(recommendationInputDTOS.size());
-        POI lastPOI = null;
-        for (RecommendationInputDTO recommendationInputDTO : recommendationInputDTOS) {
-            Double latitude = recommendationInputDTO.getLatitude();
-            Double longitude = recommendationInputDTO.getLongitude();
-            if (latitude != null && longitude != null) {
-                // a specific location user wants to go
-                String busyness = zoneService.predictZoneBusyness(Collections.singletonList(recommendationInputDTO.getTime()), recommendationInputDTO.getZoneId()).get(0);
-                userPlans.add(new UserPlan(recommendationInputDTO.getPoiName(), recommendationInputDTO.getTime(), busyness, latitude, longitude));
-                lastPOI = new POI(latitude, longitude);
-            } else {
-                // no specific location, needs to recommend
-                String poiTypeName = recommendationInputDTO.getPoiTypeName();
-                ZonedDateTime dateTime = recommendationInputDTO.getTime();
-                HashMap<Long, String> zoneBusynessMap = zoneService.predictZoneBusyness(dateTime);
-                // simple greedy algorithm, get the most recommended POI for each step based on predicted busyness and distance from last location
-                POIBusynessDistanceRecommendationDTO poiBusynessDistanceRecommendationDTO =
-                        assignBusynessDistanceForPOIs(poiTypeName,
-                                lastPOI,
-                                zoneBusynessMap,
-                                recommendationInputDTO.getTransitType(),
-                                1
-                        ).get(0);
-                lastPOI = poiBusynessDistanceRecommendationDTO.getPoi();
-                userPlans.add(new UserPlan(lastPOI.getPoiName(),
-                        dateTime,
-                        poiBusynessDistanceRecommendationDTO.getBusyness(),
-                        lastPOI.getLatitude(),
-                        lastPOI.getLongitude()));
+
+        class TimeGap {
+            final int index;
+            final long minutes;
+            TimeGap(int index, long minutes) {
+                this.index   = index;
+                this.minutes = minutes;
             }
         }
+
+        Map<RecommendationInputDTO, String> busynessForAnchor = new HashMap<>();
+
+        List<RecommendationInputDTO> fixedPoiFixedTime = new ArrayList<>();
+        List<RecommendationInputDTO> fixedPoiOnly      = new ArrayList<>();
+        List<RecommendationInputDTO> fixedTimeOnly     = new ArrayList<>();
+        List<RecommendationInputDTO> fullyFlexible     = new ArrayList<>();
+
+        // start/end from the DTO list:
+        RecommendationInputDTO startEntry = recommendationInputDTOS.get(0);
+        RecommendationInputDTO endEntry   = recommendationInputDTOS.get(
+                recommendationInputDTOS.size() - 1);
+
+
+
+        // Classify the **middle** entries
+        for (int i = 1; i < recommendationInputDTOS.size() - 1; i++) {
+            RecommendationInputDTO e = recommendationInputDTOS.get(i);
+            boolean hasPoi  = e.getPoiName() != null;
+            boolean hasTime = e.getTime()    != null;
+
+            if (hasPoi && hasTime)       fixedPoiFixedTime.add(e);
+            else if (hasPoi)             fixedPoiOnly.add(e);
+            else if (hasTime)            fixedTimeOnly.add(e);
+            else                         fullyFlexible.add(e);
+        }
+        ArrayList<UserPlan> userPlans = new ArrayList<>(recommendationInputDTOS.size());
+
+        // Build your anchors list as DTOs, not PlanEntry
+        List<RecommendationInputDTO> anchors = new ArrayList<>();
+        anchors.add(startEntry);
+        anchors.addAll(fixedPoiFixedTime);
+        anchors.addAll(fixedTimeOnly);
+        anchors.add(endEntry);
+
+        // Sort by the DTO’s time
+        anchors.sort(Comparator.comparing(RecommendationInputDTO::getTime));
+
+
+
+              
+        for (RecommendationInputDTO anchor : anchors) {
+            if (anchor.getPoiName() != null) {
+                String busy = zoneService
+                        .predictZoneBusyness(
+                                Collections.singletonList(anchor.getTime()),
+                                anchor.getZoneId())
+                        .get(0);
+                busynessForAnchor.put(anchor, busy);
+            }
+        }
+
+        for (int i = 1; i < anchors.size() - 1; i++) {
+            RecommendationInputDTO anchor = anchors.get(i);
+            // only fill slots that need recommendation
+            if (anchor.getPoiName() == null) {
+                // neighbors
+                RecommendationInputDTO prev = anchors.get(i - 1);
+                RecommendationInputDTO next = anchors.get(i + 1);
+
+                // compute time gaps
+                ZonedDateTime tAnchor = anchor.getTime();
+                ZonedDateTime tPrev = prev.getTime();
+                ZonedDateTime tNext = next.getTime();
+                Duration gapPrev = Duration.between(tPrev, tAnchor).abs();
+                Duration gapNext = Duration.between(tAnchor, tNext).abs();
+
+                // decide which anchor to use as context (lastPOI)
+                POI lastPOIEntity;
+                if (gapPrev.compareTo(gapNext) < 0) {
+                    lastPOIEntity = new POI();
+                    lastPOIEntity.setPoiName(prev.getPoiName());
+                    lastPOIEntity.setLatitude(prev.getLatitude());
+                    lastPOIEntity.setLongitude(prev.getLongitude());
+                } else {
+                    if (next.getPoiName() != null) {
+                        lastPOIEntity = new POI();
+                        lastPOIEntity.setPoiName(next.getPoiName());
+                        lastPOIEntity.setLatitude(next.getLatitude());
+                        lastPOIEntity.setLongitude(next.getLongitude());
+                    } else {
+                        lastPOIEntity = new POI();
+                        lastPOIEntity.setPoiName(prev.getPoiName());
+                        lastPOIEntity.setLatitude(prev.getLatitude());
+                        lastPOIEntity.setLongitude(prev.getLongitude());
+                    }
+                }
+
+                // 1) pick up the busyness map for this anchor’s time
+                HashMap<Long,String> zoneBusynessMap
+                        = zoneService.predictZoneBusyness(anchor.getTime());
+
+                // call your helper (null transitType, limit=1)
+                List<POIBusynessDistanceRecommendationDTO> recs =
+                        assignBusynessDistanceForPOIs(
+                                anchor.getPoiTypeName(),
+                                lastPOIEntity,
+                                zoneBusynessMap,
+                                null,    // transitType
+                                1        // limit
+                        );
+
+                // use the single top result to fill the anchor
+                POIBusynessDistanceRecommendationDTO best = recs.get(0);
+
+                POI chosen = recs.get(0).getPoi();
+                anchor.setPoiName(chosen.getPoiName());
+                anchor.setLatitude(chosen.getLatitude());
+                anchor.setLongitude(chosen.getLongitude());
+                busynessForAnchor.put(anchor, best.getBusyness());
+
+            }
+        }
+
+        // 1) build & sort gaps
+        List<TimeGap> gaps = new ArrayList<>();
+        for (int i = 1; i < anchors.size(); i++) {
+            RecommendationInputDTO prev = anchors.get(i-1);
+            RecommendationInputDTO next = anchors.get(i);
+            long gapMin = Duration.between(prev.getTime(), next.getTime()).toMinutes();
+            gaps.add(new TimeGap(i, gapMin));
+        }
+        gaps.sort((a,b) -> Long.compare(b.minutes, a.minutes));  // largest first
+
+// 2) insert each fixed-POI-only into the biggest feasible gap
+        for (RecommendationInputDTO poiOnly : fixedPoiOnly) {
+            boolean placed = false;
+
+            // compute a POI stub for distance calculations
+            POI thisPoi = new POI();
+            thisPoi.setPoiName(poiOnly.getPoiName());
+            thisPoi.setLatitude(poiOnly.getLatitude());
+            thisPoi.setLongitude(poiOnly.getLongitude());
+
+            for (TimeGap gap : gaps) {
+                int idx = gap.index;
+                RecommendationInputDTO prev = anchors.get(idx - 1);
+                RecommendationInputDTO next = anchors.get(idx);
+
+                // 2a) distance‐based travel times
+                double distPrevKm = calculateDistance(
+                        new POI(prev.getLatitude(), prev.getLongitude()),
+                        thisPoi
+                );
+                double distNextKm = calculateDistance(
+                        thisPoi,
+                        new POI(next.getLatitude(), next.getLongitude())
+                );
+                double travelMin = distPrevKm * 2.5 + distNextKm * 2.5;
+
+                // 2b) can we fit?
+                if (travelMin <= gap.minutes) {
+                    // compute midpoint between prev.time and next.time
+                    long secondsBetween = Duration.between(prev.getTime(), next.getTime()).getSeconds();
+                    ZonedDateTime mid = prev.getTime().plusSeconds(secondsBetween / 2);
+
+                    poiOnly.setTime(mid);
+
+                    // 3) compute its busyness and store it
+                    String busy = zoneService
+                            .predictZoneBusyness(
+                                    Collections.singletonList(poiOnly.getTime()),
+                                    poiOnly.getZoneId()
+                            )
+                            .get(0);
+                    busynessForAnchor.put(poiOnly, busy);
+
+                    anchors.add(idx, poiOnly);
+                    placed = true;
+                    break;
+                }
+            }
+
+
+        }
+
+
+
+        // 3) place each fully-flexible entry
+        Iterator<RecommendationInputDTO> flexIt = fullyFlexible.iterator();
+        while (flexIt.hasNext()) {
+            RecommendationInputDTO flex = flexIt.next();
+
+            // --- a) compute the two largest gaps ---
+            List<TimeGap> gaps2 = new ArrayList<>();
+            for (int i = 1; i < anchors.size(); i++) {
+                ZonedDateTime t0 = anchors.get(i - 1).getTime();
+                ZonedDateTime t1 = anchors.get(i).getTime();
+                long gapMin = Duration.between(t0, t1).toMinutes();
+                gaps2.add(new TimeGap(i, gapMin));
+            }
+            gaps2.sort((x,y) -> Long.compare(y.minutes, x.minutes));
+            // keep only the top-2 gaps (or fewer if you don’t have two)
+            List<TimeGap> topGaps = gaps2.stream().limit(2).toList();
+
+            boolean placed = false;
+
+            // try each of the two largest gaps
+            for (TimeGap lg : topGaps) {
+                int      idx   = lg.index;
+                RecommendationInputDTO prev = anchors.get(idx - 1);
+                RecommendationInputDTO next = anchors.get(idx);
+
+                // build context POI from prev
+                POI lastPOI = new POI();
+                lastPOI.setPoiName(   prev.getPoiName());
+                lastPOI.setLatitude(  prev.getLatitude());
+                lastPOI.setLongitude( prev.getLongitude());
+
+                // get a big candidate list
+                HashMap<Long,String> zoneMap =
+                        zoneService.predictZoneBusyness(prev.getTime());
+                List<POIBusynessDistanceRecommendationDTO> candidates =
+                        assignBusynessDistanceForPOIs(
+                                flex.getPoiTypeName(),
+                                lastPOI,
+                                zoneMap,
+                                flex.getTransitType(),
+                                100
+                        );
+
+                // total gap in minutes
+                double gapMin        = lg.minutes;
+                double halfGapMin    = gapMin / 2.0;
+
+                // scan candidates until one fits
+                for (var cand : candidates) {
+                    POI   cPoi   = cand.getPoi();
+                    // travel minutes A→Z and Z→B
+                    double tAZ = calculateDistance(lastPOI, cPoi) * 2.5;
+                    double tZB = calculateDistance(cPoi,
+                            new POI(next.getLatitude(), next.getLongitude()))
+                            * 2.5;
+
+                    // must fit in the gap
+                    if (tAZ + tZB <= gapMin) {
+                        // compute “ideal” midpoint
+                        long totalSec = Duration.between(prev.getTime(), next.getTime())
+                                .getSeconds();
+                        ZonedDateTime mid = prev.getTime().plusSeconds(totalSec/2);
+
+                        // then adjust if A→Z or Z→B is > halfGap
+                        // if tAZ exceeds half the gap, shift Z forward by (tAZ - halfGap)
+                        if (tAZ > halfGapMin) {
+                            long shiftSec = (long)((tAZ - halfGapMin) * 60);
+                            mid = mid.plusSeconds(shiftSec);
+                        }
+                        // else if tZB > half the gap, shift Z backward by (tZB - halfGap)
+                        else if (tZB > halfGapMin) {
+                            long shiftSec = (long)((tZB - halfGapMin) * 60);
+                            mid = mid.minusSeconds(shiftSec);
+                        }
+
+                        // now fill flex
+                        flex.setPoiName(   cPoi.getPoiName());
+                        flex.setLatitude(  cPoi.getLatitude());
+                        flex.setLongitude( cPoi.getLongitude());
+                        flex.setTime(      mid);
+                        busynessForAnchor.put(flex, cand.getBusyness());
+
+                        // insert and mark placed
+                        anchors.add(idx, flex);
+                        placed = true;
+                        break;
+                    }
+                }
+                if (placed) break;
+            }
+
+            // if still not placed, fall back to midpoint of largest gap
+            if (!placed) {
+                TimeGap lg = gaps2.get(0);
+                int idx = lg.index;
+                RecommendationInputDTO prev = anchors.get(idx-1);
+                RecommendationInputDTO next = anchors.get(idx);
+                long totalSec = Duration.between(prev.getTime(), next.getTime()).getSeconds();
+                ZonedDateTime mid = prev.getTime().plusSeconds(totalSec/2);
+
+                // pick top-1 candidate now
+                POI lastPOI = new POI();
+                lastPOI.setPoiName(prev.getPoiName());
+                lastPOI.setLatitude(prev.getLatitude());
+                lastPOI.setLongitude(prev.getLongitude());
+                var best = assignBusynessDistanceForPOIs(
+                        flex.getPoiTypeName(),
+                        lastPOI,
+                        zoneService.predictZoneBusyness(prev.getTime()),
+                        flex.getTransitType(),
+                        1
+                ).get(0);
+                POI cPoi = best.getPoi();
+
+                flex.setPoiName(   cPoi.getPoiName());
+                flex.setLatitude(  cPoi.getLatitude());
+                flex.setLongitude( cPoi.getLongitude());
+                flex.setTime(      mid);
+                busynessForAnchor.put(flex, best.getBusyness());
+                anchors.add(idx, flex);
+            }
+
+            flexIt.remove();
+        }
+
+// …then map anchors → UserPlan as before…
+
+
+// … then at the end you map anchors → UserPlan exactly as before …
+
+
+
+
+
+
+
+
+
+        for (RecommendationInputDTO dto : anchors) {
+            UserPlan plan = new UserPlan();
+            // assuming your UserPlan entity has setters for each field
+            plan.setPoiName(dto.getPoiName());
+            plan.setTime(dto.getTime());
+            plan.setBusyness( busynessForAnchor.get(dto) );
+            plan.setLatitude(dto.getLatitude());
+            plan.setLongitude(dto.getLongitude());
+
+
+            userPlans.add(plan);
+        }
+
+
+
+
+
+
+
+
+//        ArrayList<UserPlan> userPlans = new ArrayList<>(recommendationInputDTOS.size());
+//        POI lastPOI = null;
+//        for (RecommendationInputDTO recommendationInputDTO : recommendationInputDTOS) {
+//            Double latitude = recommendationInputDTO.getLatitude();
+//            Double longitude = recommendationInputDTO.getLongitude();
+//            if (latitude != null && longitude != null) {
+//                // a specific location user wants to go
+//                String busyness = zoneService.predictZoneBusyness(Collections.singletonList(recommendationInputDTO.getTime()), recommendationInputDTO.getZoneId()).get(0);
+//                userPlans.add(new UserPlan(recommendationInputDTO.getPoiName(), recommendationInputDTO.getTime(), busyness, latitude, longitude));
+//                lastPOI = new POI(latitude, longitude);
+//            } else {
+//                // no specific location, needs to recommend
+//                String poiTypeName = recommendationInputDTO.getPoiTypeName();
+//                ZonedDateTime dateTime = recommendationInputDTO.getTime();
+//                HashMap<Long, String> zoneBusynessMap = zoneService.predictZoneBusyness(dateTime);
+//                // simple greedy algorithm, get the most recommended POI for each step based on predicted busyness and distance from last location
+//                POIBusynessDistanceRecommendationDTO poiBusynessDistanceRecommendationDTO =
+//                        assignBusynessDistanceForPOIs(poiTypeName,
+//                                lastPOI,
+//                                zoneBusynessMap,
+//                                recommendationInputDTO.getTransitType(),
+//                                1
+//                        ).get(0);
+//                lastPOI = poiBusynessDistanceRecommendationDTO.getPoi();
+//                userPlans.add(new UserPlan(lastPOI.getPoiName(),
+//                        dateTime,
+//                        poiBusynessDistanceRecommendationDTO.getBusyness(),
+//                        lastPOI.getLatitude(),
+//                        lastPOI.getLongitude()));
+//            }
+//        }
         return userPlans;
     }
 
