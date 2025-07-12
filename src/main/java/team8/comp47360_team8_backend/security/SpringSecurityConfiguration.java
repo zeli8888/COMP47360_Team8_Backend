@@ -102,7 +102,7 @@ public class SpringSecurityConfiguration {
 
         http.oauth2Login(oauth2 -> oauth2
                 .loginPage(frontendUrls[0]+"/signin")
-                .defaultSuccessUrl(frontendUrls[0])
+                .defaultSuccessUrl(frontendUrls[0]+"/google-callback")
         );
 
         http.logout(logout -> logout
