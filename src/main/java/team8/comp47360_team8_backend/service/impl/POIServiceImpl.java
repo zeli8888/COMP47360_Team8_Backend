@@ -142,7 +142,22 @@ public class POIServiceImpl implements POIService {
 
 
 
-              
+        // after we've built & sorted `anchors`…
+        Map<RecommendationInputDTO,ZonedDateTime> departure = new HashMap<>();
+
+        for (RecommendationInputDTO a : anchors) {
+            // arrival = the anchor’s fixed-or-computed time
+            ZonedDateTime arrival = a.getTime();
+            // how long we linger here (default, say 15′ if null)
+            int stay = Optional.ofNullable(a.getStayMinutes()).orElse(15);
+            // departure = arrival + stay
+            departure.put(a, arrival.plusMinutes(stay));
+        }
+
+
+
+
+
         for (RecommendationInputDTO anchor : anchors) {
             if (anchor.getPoiName() != null) {
                 String busy = zoneService
@@ -214,21 +229,42 @@ public class POIServiceImpl implements POIService {
                 busynessForAnchor.put(anchor, best.getBusyness());
 
             }
+
         }
 
-        // 1) build & sort gaps
-        List<TimeGap> gaps = new ArrayList<>();
-        for (int i = 1; i < anchors.size(); i++) {
-            RecommendationInputDTO prev = anchors.get(i-1);
-            RecommendationInputDTO next = anchors.get(i);
-            long gapMin = Duration.between(prev.getTime(), next.getTime()).toMinutes();
-            gaps.add(new TimeGap(i, gapMin));
+        for (RecommendationInputDTO a : anchors) {
+            // arrival = the anchor’s fixed-or-computed time
+            ZonedDateTime arrival = a.getTime();
+            // how long we linger here (default, say 15′ if null)
+            int stay = Optional.ofNullable(a.getStayMinutes()).orElse(15);
+            // departure = arrival + stay
+            departure.put(a, arrival.plusMinutes(stay));
         }
-        gaps.sort((a,b) -> Long.compare(b.minutes, a.minutes));  // largest first
+
+
+
 
 // 2) insert each fixed-POI-only into the biggest feasible gap
         for (RecommendationInputDTO poiOnly : fixedPoiOnly) {
             boolean placed = false;
+
+            // rebuild departure for the current anchors
+            for (RecommendationInputDTO a : anchors) {
+                ZonedDateTime arrival = a.getTime();
+                int stay = Optional.ofNullable(a.getStayMinutes()).orElse(15);
+                departure.put(a, arrival.plusMinutes(stay));
+            }
+
+            // ── 1) build & sort gaps (using departure) ──
+            List<TimeGap> gaps = new ArrayList<>();
+            for (int i = 1; i < anchors.size(); i++) {
+                RecommendationInputDTO prev = anchors.get(i - 1);
+                RecommendationInputDTO next = anchors.get(i);
+                ZonedDateTime departPrev = departure.get(prev);
+                long gapMin = Duration.between(departPrev, next.getTime()).toMinutes();
+                gaps.add(new TimeGap(i, gapMin));
+            }
+            gaps.sort((a, b) -> Long.compare(b.minutes, a.minutes));  // largest first
 
             // compute a POI stub for distance calculations
             POI thisPoi = new POI();
@@ -254,10 +290,10 @@ public class POIServiceImpl implements POIService {
 
                 // 2b) can we fit?
                 if (travelMin <= gap.minutes) {
-                    // compute midpoint between prev.time and next.time
-                    long secondsBetween = Duration.between(prev.getTime(), next.getTime()).getSeconds();
-                    ZonedDateTime mid = prev.getTime().plusSeconds(secondsBetween / 2);
-
+                    // use departure instead of arrival for A→Z midpoint
+                    ZonedDateTime departPrev = departure.get(prev);
+                    long secondsBetween = Duration.between(departPrev, next.getTime()).getSeconds();
+                    ZonedDateTime mid = departPrev.plusSeconds(secondsBetween / 2);
                     poiOnly.setTime(mid);
 
                     // 3) compute its busyness and store it
@@ -275,7 +311,48 @@ public class POIServiceImpl implements POIService {
                 }
             }
 
+            // 2c) fallback: if none of the gaps could fit it, stick it in the very largest gap at its midpoint
+            if (!placed) {
+                // the largest gap is at index 0
+                TimeGap lg = gaps.get(0);
+                int idx = lg.index;
 
+                RecommendationInputDTO prev = anchors.get(idx - 1);
+                RecommendationInputDTO next = anchors.get(idx);
+
+                // use departure of prev
+                ZonedDateTime departPrev = departure.get(prev);
+                ZonedDateTime arriveNext = next.getTime();
+
+                // midpoint between departPrev and arriveNext
+                long secondsBetween = Duration.between(departPrev, arriveNext).getSeconds();
+                ZonedDateTime mid = departPrev.plusSeconds(secondsBetween / 2);
+
+                // assign that fallback time
+                poiOnly.setTime(mid);
+
+                // compute its busyness too
+                String busy = zoneService
+                        .predictZoneBusyness(
+                                Collections.singletonList(poiOnly.getTime()),
+                                poiOnly.getZoneId()
+                        )
+                        .get(0);
+                busynessForAnchor.put(poiOnly, busy);
+
+                // finally insert it into your anchors list
+                anchors.add(idx, poiOnly);
+            }
+
+        }
+
+        for (RecommendationInputDTO a : anchors) {
+            // arrival = the anchor’s fixed-or-computed time
+            ZonedDateTime arrival = a.getTime();
+            // how long we linger here (default, say 15′ if null)
+            int stay = Optional.ofNullable(a.getStayMinutes()).orElse(15);
+            // departure = arrival + stay
+            departure.put(a, arrival.plusMinutes(stay));
         }
 
 
@@ -285,17 +362,35 @@ public class POIServiceImpl implements POIService {
         while (flexIt.hasNext()) {
             RecommendationInputDTO flex = flexIt.next();
 
-            // --- a) compute the two largest gaps ---
+            // ── rebuild departure for the current anchors ──
+            departure.clear();
+            for (RecommendationInputDTO a2 : anchors) {
+                ZonedDateTime arr2 = a2.getTime();
+                int stay2 = Optional.ofNullable(a2.getStayMinutes()).orElse(15);
+                departure.put(a2, arr2.plusMinutes(stay2));
+            }
+
+
+            /// --- a) compute the two largest gaps ---
             List<TimeGap> gaps2 = new ArrayList<>();
             for (int i = 1; i < anchors.size(); i++) {
-                ZonedDateTime t0 = anchors.get(i - 1).getTime();
-                ZonedDateTime t1 = anchors.get(i).getTime();
-                long gapMin = Duration.between(t0, t1).toMinutes();
+                // OLD: using arrival times
+                // ZonedDateTime t0 = anchors.get(i - 1).getTime();
+                // ZonedDateTime t1 = anchors.get(i).getTime();
+
+                // NEW: use departure of the previous anchor as the start
+                RecommendationInputDTO prev = anchors.get(i - 1);
+                RecommendationInputDTO next = anchors.get(i);
+                ZonedDateTime departPrev = departure.get(prev);  // arrival + stayMinutes
+                ZonedDateTime arriveNext = next.getTime();
+
+                long gapMin = Duration.between(departPrev, arriveNext).toMinutes();
                 gaps2.add(new TimeGap(i, gapMin));
             }
-            gaps2.sort((x,y) -> Long.compare(y.minutes, x.minutes));
+            gaps2.sort((x, y) -> Long.compare(y.minutes, x.minutes));
             // keep only the top-2 gaps (or fewer if you don’t have two)
             List<TimeGap> topGaps = gaps2.stream().limit(2).toList();
+
 
             boolean placed = false;
 
@@ -335,12 +430,21 @@ public class POIServiceImpl implements POIService {
                     double tZB = calculateDistance(cPoi,
                             new POI(next.getLatitude(), next.getLongitude()))
                             * 2.5;
+                    // total window in minutes between departing A and arriving B
+                    long windowMin = Duration.between(departure.get(prev), next.getTime()).toMinutes();
+
+                    // include the stay at Z
+                    int stayMin = Optional.ofNullable(flex.getStayMinutes()).orElse(15);
+                    double requiredMin = tAZ + stayMin + tZB;
 
                     // must fit in the gap
-                    if (tAZ + tZB <= gapMin) {
-                        // compute “ideal” midpoint
-                        long totalSec = Duration.between(prev.getTime(), next.getTime())
-                                .getSeconds();
+                    if (requiredMin <= gapMin) {
+                        // compute the window start and end properly:
+                        ZonedDateTime departA = departure.get(prev);
+                        ZonedDateTime arriveB = next.getTime();
+
+// total seconds between A’s departure and B’s arrival:
+                        long totalSec = Duration.between(departA, arriveB).getSeconds();
                         ZonedDateTime mid = prev.getTime().plusSeconds(totalSec/2);
 
                         // then adjust if A→Z or Z→B is > halfGap
