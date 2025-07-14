@@ -108,7 +108,7 @@ public class POIServiceImpl implements POIService {
         return result;
     }
 
-    boolean isFixedPoi(RecommendationInputDTO recommendationInputDTO) {
+    private boolean isFixedPoi(RecommendationInputDTO recommendationInputDTO) {
         return recommendationInputDTO.getPoiName() != null && recommendationInputDTO.getZoneId() != null
                 && recommendationInputDTO.getLatitude() != null && recommendationInputDTO.getLongitude() != null;
     }
