@@ -475,11 +475,8 @@ public class POIServiceImpl implements POIService {
         }
 
         anchors.sort(Comparator.comparing(RecommendationInputDTO::getTime));
-        if (!isFixedPoi(anchors.get(anchors.size()-1))) {
-            // remove added extra ending location
-            anchors.remove(anchors.size()-1);
-        }
         for (RecommendationInputDTO dto : anchors) {
+            if (!isFixedPoi(dto)) continue;
             UserPlan plan = new UserPlan();
             plan.setPoiName(dto.getPoiName());
             plan.setTime(dto.getTime());

@@ -369,10 +369,7 @@ public class POIServiceImpl implements POIService {
                 RecommendationInputDTO next = anchors.get(endIndex);
 
                 // build context POI from prev
-                POI lastPOI = new POI();
-                lastPOI.setPoiName(prev.getPoiName());
-                lastPOI.setLatitude(prev.getLatitude());
-                lastPOI.setLongitude(prev.getLongitude());
+                POI lastPOI = new POI(prev.getLatitude(), prev.getLongitude());
 
                 // get a big candidate list
                 ZonedDateTime mid = prev.getTime().plusMinutes(prev.getStayMinutes()).plusMinutes(lg.getMinutes() / 2);
@@ -410,6 +407,7 @@ public class POIServiceImpl implements POIService {
                         flex.setPoiName(cPoi.getPoiName());
                         flex.setLatitude(cPoi.getLatitude());
                         flex.setLongitude(cPoi.getLongitude());
+                        flex.setZoneId(cPoi.getZone().getZoneId());
                         flex.setTime(mid);
                         busynessForAnchor.put(flex, cand.getBusyness());
 
@@ -457,6 +455,7 @@ public class POIServiceImpl implements POIService {
                 flex.setPoiName(cPoi.getPoiName());
                 flex.setLatitude(cPoi.getLatitude());
                 flex.setLongitude(cPoi.getLongitude());
+                flex.setZoneId(cPoi.getZone().getZoneId());
                 flex.setTime(mid);
                 busynessForAnchor.put(flex, best.getBusyness());
 
