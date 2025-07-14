@@ -14,6 +14,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import team8.comp47360_team8_backend.controller.POIController;
+import team8.comp47360_team8_backend.controller.POITypeController;
 import team8.comp47360_team8_backend.controller.UserController;
 import team8.comp47360_team8_backend.controller.UserPlanController;
 import team8.comp47360_team8_backend.model.User;
@@ -48,6 +49,8 @@ public class CSRFTest {
     private UserPlanController userPlanController;
     @MockitoBean
     private POIController poiController;
+    @MockitoBean
+    private POITypeController poiTypeController;
     @Autowired
     private MockMvc mockMvc;
     private static final ObjectMapper om = new ObjectMapper();
@@ -63,6 +66,10 @@ public class CSRFTest {
         when(poiController.getListOfRecommendations(any())).thenReturn(ResponseEntity.ok(Collections.emptyList()));
         mockMvc.perform(post("/pois/recommendation").contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsString(Collections.emptyList())))
                 .andExpect(status().isOk());
+
+        // get poitypes
+        when(poiTypeController.getAllPOITypes()).thenReturn(ResponseEntity.ok(Collections.emptyList()));
+        mockMvc.perform(get("/poitypes")).andExpect(status().isOk());
     }
 
     @Test

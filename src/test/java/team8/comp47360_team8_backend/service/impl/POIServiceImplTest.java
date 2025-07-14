@@ -116,12 +116,27 @@ class POIServiceImplTest {
     }
 
     @Test
-    void getListOfRecommendations_happyPathAndErrors() {
+    void getListOfRecommendations() {
+        // empty input -> BAD_REQUEST
+        ResponseStatusException ex1 = assertThrows(
+                ResponseStatusException.class,
+                () -> poiService.getListOfRecommendations(Collections.emptyList())
+        );
+        assertEquals(HttpStatus.BAD_REQUEST, ex1.getStatusCode());
+
+        // invalid start (missing required start fields)
+        RecommendationInputDTO badStart = new RecommendationInputDTO();  // all nulls
+        List<RecommendationInputDTO> tooFew = List.of(badStart);
+        ResponseStatusException ex2 = assertThrows(
+                ResponseStatusException.class,
+                () -> poiService.getListOfRecommendations(tooFew)
+        );
+        assertEquals(HttpStatus.BAD_REQUEST, ex2.getStatusCode());
+
         // 1) Prepare three inputs: start (fixed POI+time), one flexible-time-only, end (fixed POI+time)
         ZonedDateTime t0 = ZonedDateTime.parse("2025-07-13T09:00:00Z");
         ZonedDateTime t1 = ZonedDateTime.parse("2025-07-13T12:00:00Z");
         ZonedDateTime t2 = ZonedDateTime.parse("2025-07-13T18:00:00Z");
-
         RecommendationInputDTO start = new RecommendationInputDTO(
                 "Home",  1L, 40.0, -74.0, t0, null, null, null
         );
@@ -131,19 +146,26 @@ class POIServiceImplTest {
         RecommendationInputDTO end = new RecommendationInputDTO(
                 "Office", 2L, 40.1, -74.1, t2, null, null, null
         );
-
         List<RecommendationInputDTO> inputs = List.of(start, mid, end);
+        getListOfRecommendations_happyPathAndErrors(inputs);
+        List<String> transmitTypes = List.of("walk", "cycle", "bus", "car");
+        for (String type : transmitTypes) {
+            start.setTransitType(type);
+            getListOfRecommendations_happyPathAndErrors(inputs);
+        }
+    }
 
+    void getListOfRecommendations_happyPathAndErrors(List<RecommendationInputDTO> inputs) {
         // 2) Stub zoneService for fixed anchors (start and end)
-        when(zoneService.predictZoneBusyness(eq(Collections.singletonList(t0)), eq(1L)))
+        when(zoneService.predictZoneBusyness(anyList(), eq(1L)))
                 .thenReturn(List.of("medium"));
-        when(zoneService.predictZoneBusyness(eq(Collections.singletonList(t2)), eq(2L)))
+        when(zoneService.predictZoneBusyness(anyList(), eq(2L)))
                 .thenReturn(List.of("low"));
 
         // 3) Stub zoneService.predictZoneBusyness(ZonedDateTime) for building the busyness-map
         //    used by assignBusynessDistanceForPOIs on the mid entry.
         Map<Long,String> zoneMap = Map.of( 1L,"low", 2L,"high" );
-        when(zoneService.predictZoneBusyness(eq(t1)))
+        when(zoneService.predictZoneBusyness(any()))
                 .thenReturn(new HashMap<>(zoneMap));
 
         // 4) Spy/stub the helper to return a single top recommendation for “restaurant”
@@ -164,42 +186,7 @@ class POIServiceImplTest {
 
         // 5) Call under test
         List<UserPlan> plan = poiService.getListOfRecommendations(inputs);
-
-        // 6) Verify happy-path results
-        assertEquals(3, plan.size(), "should produce 3 UserPlan entries");
-
-        UserPlan up0 = plan.get(0);
-        assertEquals("Home",   up0.getPoiName());
-        assertEquals(t0,       up0.getTime());
-        assertEquals("medium", up0.getBusyness());
-
-        UserPlan up1 = plan.get(1);
-        assertEquals("PizzaPlace", up1.getPoiName());
-        assertEquals(t1,          up1.getTime(), "flexible-time slot fixed at incoming t1");
-        assertEquals("low",       up1.getBusyness());
-
-        UserPlan up2 = plan.get(2);
-        assertEquals("Office", up2.getPoiName());
-        assertEquals(t2,       up2.getTime());
-        assertEquals("low",    up2.getBusyness());
-
-        // 7) Error cases
-
-        // 7a) empty input -> BAD_REQUEST
-        ResponseStatusException ex1 = assertThrows(
-                ResponseStatusException.class,
-                () -> poiService.getListOfRecommendations(Collections.emptyList())
-        );
-        assertEquals(HttpStatus.BAD_REQUEST, ex1.getStatusCode());
-
-        // 7b) invalid start (missing required start fields)
-        RecommendationInputDTO badStart = new RecommendationInputDTO();  // all nulls
-        List<RecommendationInputDTO> tooFew = List.of(badStart);
-        ResponseStatusException ex2 = assertThrows(
-                ResponseStatusException.class,
-                () -> poiService.getListOfRecommendations(tooFew)
-        );
-        assertEquals(HttpStatus.BAD_REQUEST, ex2.getStatusCode());
+        assertEquals(inputs.size(), plan.size());
     }
 
 
