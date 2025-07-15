@@ -144,14 +144,6 @@ class POIServiceImplTest {
                 () -> poiService.getListOfRecommendations(invalidStartInputs)
         );
 
-        // invalid start (missing required start fields)
-        List<RecommendationInputDTO> invalidStartInputs2 = resetInputForListOfRecommendations();
-        invalidStartInputs2.get(0).setTime(null);
-        ResponseStatusException ex22 = assertThrows(
-                ResponseStatusException.class,
-                () -> poiService.getListOfRecommendations(invalidStartInputs2)
-        );
-
         // unfixed POI without poi type -> BAD_REQUEST
         List<RecommendationInputDTO> inputs = resetInputForListOfRecommendations();
         inputs.get(1).setPoiTypeName(null);

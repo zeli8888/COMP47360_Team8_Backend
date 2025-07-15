@@ -124,7 +124,7 @@ public class POIServiceImpl implements POIService {
     @Override
     public List<UserPlan> getListOfRecommendations(List<RecommendationInputDTO> recommendationInputDTOS) {
         if (recommendationInputDTOS.size() <= 1) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No recommendation input");
-        if (!isFixedPoi(recommendationInputDTOS.get(0))) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Start location is not valid");
+        if (!isFixedPoi(recommendationInputDTOS.get(0)) || recommendationInputDTOS.get(0).getTime() == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Start location is not valid");
 
         final int minutesPerKilometer;
         String transitType = recommendationInputDTOS.get(0).getTransitType();
