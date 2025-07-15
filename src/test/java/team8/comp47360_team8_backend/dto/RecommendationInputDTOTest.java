@@ -18,10 +18,10 @@ class RecommendationInputDTOTest {
         ZonedDateTime time = ZonedDateTime.now();
         String transitType = "walk";
         String poiTypeName = "Study Area";
+        Integer StayMinutes = 30;
 
         // When using all-args constructor
-        RecommendationInputDTO dto = new RecommendationInputDTO(poiName, zoneId, latitude, longitude, time, transitType,
-                poiTypeName);
+        RecommendationInputDTO dto = new RecommendationInputDTO(poiName, zoneId, latitude, longitude, time, transitType, poiTypeName, StayMinutes);
 
         // Then
         assertEquals(poiName, dto.getPoiName());
@@ -31,6 +31,7 @@ class RecommendationInputDTOTest {
         assertEquals(time, dto.getTime());
         assertEquals(transitType, dto.getTransitType());
         assertEquals(poiTypeName, dto.getPoiTypeName());
+        assertEquals(StayMinutes, dto.getStayMinutes());
 
         // When using setters
         RecommendationInputDTO emptyDto = new RecommendationInputDTO();
@@ -41,6 +42,7 @@ class RecommendationInputDTOTest {
         emptyDto.setTime(time);
         emptyDto.setTransitType("bus");
         emptyDto.setPoiTypeName("Food");
+        emptyDto.setStayMinutes(40);
 
         // Then
         assertEquals("Café", emptyDto.getPoiName());
@@ -50,5 +52,6 @@ class RecommendationInputDTOTest {
         assertEquals(time, emptyDto.getTime());
         assertEquals("bus", emptyDto.getTransitType());
         assertEquals("Food", emptyDto.getPoiTypeName());
+        assertEquals(40, emptyDto.getStayMinutes());
     }
 }

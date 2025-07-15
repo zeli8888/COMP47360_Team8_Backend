@@ -16,11 +16,12 @@ public class RecommendationInputDTO {
     private ZonedDateTime time;
     private String transitType;
     private String poiTypeName;
+    private Integer stayMinutes;
 
     public RecommendationInputDTO() {
     }
 
-    public RecommendationInputDTO(String poiName, Long zoneId, Double latitude, Double longitude, ZonedDateTime time, String transitType, String poiTypeName) {
+    public RecommendationInputDTO(String poiName, Long zoneId, Double latitude, Double longitude, ZonedDateTime time, String transitType, String poiTypeName, Integer StayMinutes) {
         this.poiName = poiName;
         this.zoneId = zoneId;
         this.latitude = latitude;
@@ -28,6 +29,7 @@ public class RecommendationInputDTO {
         this.time = time;
         this.transitType = transitType;
         this.poiTypeName = poiTypeName;
+        this.stayMinutes = StayMinutes;
     }
 
     public Long getZoneId() {
@@ -84,5 +86,13 @@ public class RecommendationInputDTO {
 
     public void setPoiTypeName(String poiTypeName) {
         this.poiTypeName = poiTypeName;
+    }
+
+    public void setStayMinutes(Integer stayMinutes) {
+        this.stayMinutes = stayMinutes;
+    }
+
+    public Integer getStayMinutes() {
+        return stayMinutes;
     }
 }

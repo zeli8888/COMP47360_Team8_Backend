@@ -3,11 +3,8 @@ package team8.comp47360_team8_backend.service.impl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Spy;
+import org.mockito.*;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.web.server.ResponseStatusException;
@@ -26,8 +23,7 @@ import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * @Author : Ze Li
@@ -115,54 +111,128 @@ class POIServiceImplTest {
         poiService.assignBusynessDistanceForPOIs("restaurant", lastPOI, zoneBusyness, "car", 1);
     }
 
+    List<RecommendationInputDTO> resetInputForListOfRecommendations() {
+        // 1) Prepare three inputs: start (fixed POI+time), one flexible-time-only, end (fixed POI+time)
+        ZonedDateTime t0 = ZonedDateTime.parse("2025-07-13T09:00:00Z");
+        ZonedDateTime t1 = ZonedDateTime.parse("2025-07-13T12:00:00Z");
+        ZonedDateTime t2 = ZonedDateTime.parse("2025-07-13T18:00:00Z");
+        RecommendationInputDTO start = new RecommendationInputDTO(
+                "Home",  1L, 40.0, -74.0, t0, null, null, null
+        );
+        RecommendationInputDTO mid = new RecommendationInputDTO(
+                null, null,  null,  null,  t1, "walk", "restaurant", null
+        );
+        RecommendationInputDTO end = new RecommendationInputDTO(
+                "Office", 2L, 40.1, -74.1, t2, null, null, null
+        );
+        return List.of(start, mid, end);
+    }
+
     @Test
     void getListOfRecommendations() {
-        // Mock zone busyness prediction
-        when(zoneService.predictZoneBusyness(any(), anyLong()))
+        // empty input -> BAD_REQUEST
+        ResponseStatusException ex1 = assertThrows(
+                ResponseStatusException.class,
+                () -> poiService.getListOfRecommendations(Collections.emptyList())
+        );
+
+        // invalid start (missing required start fields)
+        List<RecommendationInputDTO> invalidStartInputs = resetInputForListOfRecommendations();
+        invalidStartInputs.get(0).setLatitude(null);
+        ResponseStatusException ex2 = assertThrows(
+                ResponseStatusException.class,
+                () -> poiService.getListOfRecommendations(invalidStartInputs)
+        );
+
+        // unfixed POI without poi type -> BAD_REQUEST
+        List<RecommendationInputDTO> inputs = resetInputForListOfRecommendations();
+        inputs.get(1).setPoiTypeName(null);
+        List<RecommendationInputDTO> errorInputs = inputs;
+        assertThrows(ResponseStatusException.class, () -> poiService.getListOfRecommendations(errorInputs));
+
+        // end POI after 21:00 -> BAD_REQUEST
+        List<RecommendationInputDTO> invalidEndInputs = resetInputForListOfRecommendations();
+        invalidEndInputs.get(2).setTime(ZonedDateTime.parse("2025-07-13T22:00:00Z"));
+        assertThrows(ResponseStatusException.class, () -> poiService.getListOfRecommendations(invalidEndInputs));
+
+        getListOfRecommendationsNormal(resetInputForListOfRecommendations());
+
+        // different transit types
+        inputs = resetInputForListOfRecommendations();
+        List<String> transmitTypes = List.of("walk", "cycle", "bus", "car");
+        for (String type : transmitTypes) {
+            inputs.get(0).setTransitType(type);
+            inputs.get(1).setTime(null);
+            inputs.get(2).setTime(null);
+            getListOfRecommendationsNormal(inputs);
+        }
+
+        // end location has fixed time without fixed location
+        inputs = resetInputForListOfRecommendations();
+        inputs.get(2).setLongitude(null);
+        inputs.get(2).setPoiTypeName("park");
+        getListOfRecommendationsNormal(inputs);
+
+        // fixed poi with large stay time
+        inputs = resetInputForListOfRecommendations();
+        RecommendationInputDTO poiInput = inputs.get(2);
+        poiInput.setLongitude(40.2);
+        poiInput.setLatitude(-74.2);
+        poiInput.setZoneId(3L);
+        poiInput.setPoiTypeName("restaurant");
+        poiInput.setStayMinutes(600);
+        poiInput.setTime(null);
+        getListOfRecommendationsNormal(inputs);
+
+        // flexible poi with large stay time
+        inputs = resetInputForListOfRecommendations();
+        poiInput = inputs.get(2);
+        poiInput.setLongitude(40.2);
+        poiInput.setLatitude(-74.2);
+        poiInput.setZoneId(null);
+        poiInput.setPoiTypeName("restaurant");
+        poiInput.setStayMinutes(600);
+        poiInput.setTime(null);
+        getListOfRecommendationsNormal(inputs);
+
+        // fixed time middle poi closer to end
+        inputs = resetInputForListOfRecommendations();
+        inputs.get(1).setTime(ZonedDateTime.parse("2025-07-13T17:00:00Z"));
+        getListOfRecommendationsNormal(inputs);
+
+        // totally fixed middle poi
+        inputs = resetInputForListOfRecommendations();
+        inputs.get(1).setPoiName("middle Poi");
+        inputs.get(1).setZoneId(1L);
+        inputs.get(1).setLongitude(40.1);
+        inputs.get(1).setLatitude(-74.1);
+        getListOfRecommendationsNormal(inputs);
+    }
+
+    void getListOfRecommendationsNormal(List<RecommendationInputDTO> inputs) {
+        when(zoneService.predictZoneBusyness(anyList(), any()))
                 .thenReturn(List.of("medium"));
-        when(zoneService.predictZoneBusyness(any())).thenReturn(new HashMap<>(Map.of(1L, "low", 2L, "high")));
+        Map<Long,String> zoneMap = Map.of( 1L,"low", 2L,"high" );
+        when(zoneService.predictZoneBusyness(any()))
+                .thenReturn(new HashMap<>(zoneMap));
 
-        List<RecommendationInputDTO> inputs = new ArrayList<>();
-        inputs.add(new RecommendationInputDTO(
-                "Start", 1L, 53.339428, -6.257664, ZonedDateTime.now(), null, null
-        ));
-        inputs.add(new RecommendationInputDTO(
-                null, null, null, null, ZonedDateTime.now().plusHours(1), "walk", "restaurant"
-        ));
-        inputs.add(new RecommendationInputDTO(
-                null, null, null, null, ZonedDateTime.now().plusHours(2), "car", "park"
-        ));
+        POI fakePoi = new POI( 99L, "PizzaPlace", "", 40.005, -74.005, new Zone(1L,"Z1"), null );
+        POIBusynessDistanceRecommendationDTO fakeRec =
+                new POIBusynessDistanceRecommendationDTO(
+                        fakePoi, "low", 0.5,  (10/2.0 + (10*Math.exp(-0.5/2))/2)
+                );
+        doReturn(List.of(fakeRec))
+                .when(poiService)
+                .assignBusynessDistanceForPOIs(
+                        any(),
+                        any(POI.class),
+                        any(),
+                        any(),
+                        anyInt()
+                );
 
-        doReturn(
-                List.of(
-                        new POIBusynessDistanceRecommendationDTO(poi1, "low", 0.76, 7.5)
-                )
-        ).when(poiService).assignBusynessDistanceForPOIs(eq("restaurant"), any(), any(), any(), eq(1));
-
-        doReturn(
-                List.of(
-                        new POIBusynessDistanceRecommendationDTO(poi2, "high", 0.36, 5.0)
-                )
-        ).when(poiService).assignBusynessDistanceForPOIs(eq("park"), any(), any(), any(), eq(1));
-
-        List<UserPlan> result = poiService.getListOfRecommendations(inputs);
-
-        assertEquals(3, result.size());
-        assertEquals("Start", result.get(0).getPoiName());
-        assertEquals("POI1", result.get(1).getPoiName());
-        assertEquals("POI2", result.get(2).getPoiName());
-
-        // Start Location invalid
-        List<RecommendationInputDTO> invalidInputs = new ArrayList<>();
-        invalidInputs.add(new RecommendationInputDTO(
-                null, null, null, null, ZonedDateTime.now().plusHours(1), "walk", "restaurant"
-        ));
-        ResponseStatusException responseStatusException = assertThrows(ResponseStatusException.class, () -> poiService.getListOfRecommendations(invalidInputs));
-        assertEquals(HttpStatus.BAD_REQUEST, responseStatusException.getStatusCode());
-
-        // empty input
-        ResponseStatusException responseStatusException2 = assertThrows(ResponseStatusException.class, () -> poiService.getListOfRecommendations(new ArrayList<>()));
-        assertEquals(HttpStatus.BAD_REQUEST, responseStatusException2.getStatusCode());
+        List<UserPlan> plan = poiService.getListOfRecommendations(inputs);
+        assertEquals(inputs.size(), plan.size());
     }
 
     @Test

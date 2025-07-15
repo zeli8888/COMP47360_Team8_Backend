@@ -49,4 +49,8 @@ public class AuthenticationTest {
                 .andExpect(status().isUnauthorized());
     }
 
+    @Test
+    void testMainMethod() {
+        Comp47360Team8BackendApplication.main(new String[]{});
+    }
 }
