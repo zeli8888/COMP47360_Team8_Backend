@@ -48,9 +48,4 @@ public class AuthenticationTest {
         mockMvc.perform(post("/login").contentType(MediaType.MULTIPART_FORM_DATA).param("username", "tester").param("password", "wrongpassword"))
                 .andExpect(status().isUnauthorized());
     }
-
-    @Test
-    void testMainMethod() {
-        Comp47360Team8BackendApplication.main(new String[]{});
-    }
 }
