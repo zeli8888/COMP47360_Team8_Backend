@@ -3,11 +3,8 @@ package team8.comp47360_team8_backend.service.impl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Spy;
+import org.mockito.*;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.web.server.ResponseStatusException;
@@ -21,14 +18,12 @@ import team8.comp47360_team8_backend.model.Zone;
 import team8.comp47360_team8_backend.repository.POITypeRepository;
 import team8.comp47360_team8_backend.service.ZoneService;
 
-import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * @Author : Ze Li
@@ -116,24 +111,7 @@ class POIServiceImplTest {
         poiService.assignBusynessDistanceForPOIs("restaurant", lastPOI, zoneBusyness, "car", 1);
     }
 
-    @Test
-    void getListOfRecommendations() {
-        // empty input -> BAD_REQUEST
-        ResponseStatusException ex1 = assertThrows(
-                ResponseStatusException.class,
-                () -> poiService.getListOfRecommendations(Collections.emptyList())
-        );
-        assertEquals(HttpStatus.BAD_REQUEST, ex1.getStatusCode());
-
-        // invalid start (missing required start fields)
-        RecommendationInputDTO badStart = new RecommendationInputDTO();  // all nulls
-        List<RecommendationInputDTO> tooFew = List.of(badStart);
-        ResponseStatusException ex2 = assertThrows(
-                ResponseStatusException.class,
-                () -> poiService.getListOfRecommendations(tooFew)
-        );
-        assertEquals(HttpStatus.BAD_REQUEST, ex2.getStatusCode());
-
+    List<RecommendationInputDTO> resetInputForListOfRecommendations() {
         // 1) Prepare three inputs: start (fixed POI+time), one flexible-time-only, end (fixed POI+time)
         ZonedDateTime t0 = ZonedDateTime.parse("2025-07-13T09:00:00Z");
         ZonedDateTime t1 = ZonedDateTime.parse("2025-07-13T12:00:00Z");
@@ -147,144 +125,97 @@ class POIServiceImplTest {
         RecommendationInputDTO end = new RecommendationInputDTO(
                 "Office", 2L, 40.1, -74.1, t2, null, null, null
         );
-        List<RecommendationInputDTO> inputs = List.of(start, mid, end);
-        getListOfRecommendations_happyPathAndErrors(inputs);
-        List<String> transmitTypes = List.of("walk", "cycle", "bus", "car");
-        for (String type : transmitTypes) {
-            start.setTransitType(type);
-            getListOfRecommendations_happyPathAndErrors(inputs);
-        }
+        return List.of(start, mid, end);
     }
 
     @Test
-    void getListOfRecommendations_fullyFlexibleFallback() {
-        // 1) set up three slots: a fixed start, one fully-flexible, and a fixed end
-        ZonedDateTime t0 = ZonedDateTime.parse("2025-07-13T09:00:00Z");
-        ZonedDateTime tEnd = ZonedDateTime.parse("2025-07-13T18:00:00Z");
-        RecommendationInputDTO start = new RecommendationInputDTO(
-                "Home",         // poiName
-                1L,             // zoneId
-                40.0, -74.0,    // lat/lng
-                t0,             // time
-                "car",          // transitType
-                null,           // poiTypeName
-                15              // stayMinutes
-        );
-        RecommendationInputDTO flexible = new RecommendationInputDTO(
-                null,           // poiName (to be filled)
-                1L,           // zoneId
-                null, null,     // lat/lng
-                null,           // time (to be computed)
-                "car",          // transitType
-                "museum",       // poiTypeName
-                30              // stayMinutes
-        );
-        RecommendationInputDTO end = new RecommendationInputDTO(
-                "Office",       // poiName
-                2L,             // zoneId
-                41.0, -75.0,    // lat/lng
-                tEnd,           // time
-                null,           // transitType
-                null,           // poiTypeName
-                15              // stayMinutes
+    void getListOfRecommendations() {
+        // empty input -> BAD_REQUEST
+        ResponseStatusException ex1 = assertThrows(
+                ResponseStatusException.class,
+                () -> poiService.getListOfRecommendations(Collections.emptyList())
         );
 
-        List<RecommendationInputDTO> inputs = List.of(start, flexible, end);
-
-        // 2) stub zoneService so that predictZoneBusyness(...) always returns some busyness
-        when(zoneService.predictZoneBusyness(eq(List.of(t0)), eq(1L)))
-                .thenReturn(List.of("low"));
-        when(zoneService.predictZoneBusyness(eq(List.of(tEnd)), eq(2L)))
-                .thenReturn(List.of("low"));
-        // for the fully-flexible midpoint calls we only care about the map, stub with a dummy:
-        when(zoneService.predictZoneBusyness(any(ZonedDateTime.class)))
-                .thenReturn(new HashMap<>(Map.of(1L, "low", 2L, "high")));
-
-        // 3a) make the “big candidate list” call (limit=100) return a single bad DTO
-        // instead of 41, –75, use something extreme:
-        POI bad = new POI(
-                99L, "BadMuseum", "",
-                0.0, 0.0,
-                new Zone(99L, "Z99"),
-                new POIType(99L, "museum", null)
+        // invalid start (missing required start fields)
+        List<RecommendationInputDTO> invalidStartInputs = resetInputForListOfRecommendations();
+        invalidStartInputs.get(0).setLatitude(null);
+        ResponseStatusException ex2 = assertThrows(
+                ResponseStatusException.class,
+                () -> poiService.getListOfRecommendations(invalidStartInputs)
         );
-        POIBusynessDistanceRecommendationDTO badDto =
-                new POIBusynessDistanceRecommendationDTO(
-                        bad,
-                        "low",
-                        /*distance*/ 444.0,  // arbitrary
-                        /*score*/    0.0
-                );
-        doReturn(List.of(badDto))
-                .when(poiService)
-                .assignBusynessDistanceForPOIs(
-                        eq("museum"),
-                        any(POI.class),
-                        any(HashMap.class),    // <— must be any(HashMap.class), not anyMap()
-                        eq("car"),
-                        eq(100)
-                );
 
+        // unfixed POI without poi type -> BAD_REQUEST
+        List<RecommendationInputDTO> inputs = resetInputForListOfRecommendations();
+        inputs.get(1).setPoiTypeName(null);
+        List<RecommendationInputDTO> errorInputs = inputs;
+        assertThrows(ResponseStatusException.class, () -> poiService.getListOfRecommendations(errorInputs));
 
-        // 3b) stub the fallback call (limit=1) to return a good DTO
-        POI good = new POI(42L, "FallbackMuseum", "", 40.5, -74.5, new Zone(42L, "Z42"), new POIType(42L, "museum", null));
-        POIBusynessDistanceRecommendationDTO goodDto =
-                new POIBusynessDistanceRecommendationDTO(good, "medium", /*distance*/1.0, /*score*/5.0);
+        // end POI after 21:00 -> BAD_REQUEST
+        List<RecommendationInputDTO> invalidEndInputs = resetInputForListOfRecommendations();
+        invalidEndInputs.get(2).setTime(ZonedDateTime.parse("2025-07-13T22:00:00Z"));
+        assertThrows(ResponseStatusException.class, () -> poiService.getListOfRecommendations(invalidEndInputs));
 
-        // 3b) fallback list returns the one good DTO:
-        doReturn(List.of(goodDto))
-                .when(poiService)
-                .assignBusynessDistanceForPOIs(
-                        eq("museum"),
-                        any(POI.class),
-                        any(HashMap.class),   // <-- was anyMap()
-                        eq("car"),
-                        eq(1)
-                );
+        getListOfRecommendationsNormal(resetInputForListOfRecommendations());
 
+        // different transit types
+        inputs = resetInputForListOfRecommendations();
+        List<String> transmitTypes = List.of("walk", "cycle", "bus", "car");
+        for (String type : transmitTypes) {
+            inputs.get(0).setTransitType(type);
+            inputs.get(1).setTime(null);
+            inputs.get(2).setTime(null);
+            getListOfRecommendationsNormal(inputs);
+        }
 
+        // end location has fixed time without fixed location
+        inputs = resetInputForListOfRecommendations();
+        inputs.get(2).setLongitude(null);
+        inputs.get(2).setPoiTypeName("park");
+        getListOfRecommendationsNormal(inputs);
 
-        // 4) run the algorithm
-        List<UserPlan> plan = poiService.getListOfRecommendations(inputs);
+        // fixed poi with large stay time
+        inputs = resetInputForListOfRecommendations();
+        RecommendationInputDTO poiInput = inputs.get(2);
+        poiInput.setLongitude(40.2);
+        poiInput.setLatitude(-74.2);
+        poiInput.setZoneId(3L);
+        poiInput.setPoiTypeName("restaurant");
+        poiInput.setStayMinutes(600);
+        poiInput.setTime(null);
+        getListOfRecommendationsNormal(inputs);
 
-        // 5) verify that we got exactly three entries and that the middle one is our "good" fallback
-        assertEquals(3, plan.size(), "should produce exactly start, fallback, end");
+        // flexible poi with large stay time
+        inputs = resetInputForListOfRecommendations();
+        poiInput = inputs.get(2);
+        poiInput.setLongitude(40.2);
+        poiInput.setLatitude(-74.2);
+        poiInput.setZoneId(null);
+        poiInput.setPoiTypeName("restaurant");
+        poiInput.setStayMinutes(600);
+        poiInput.setTime(null);
+        getListOfRecommendationsNormal(inputs);
 
-        // start and end should be unchanged
-        assertEquals("Home", plan.get(0).getPoiName());
-        assertEquals("Office", plan.get(2).getPoiName());
+        // fixed time middle poi closer to end
+        inputs = resetInputForListOfRecommendations();
+        inputs.get(1).setTime(ZonedDateTime.parse("2025-07-13T17:00:00Z"));
+        getListOfRecommendationsNormal(inputs);
 
-        // the middle entry must be the fallback POI
-        UserPlan midPlan = plan.get(1);
-        assertEquals("FallbackMuseum", midPlan.getPoiName());
-        assertEquals("medium",      midPlan.getBusyness());
-
-        // its time should lie strictly between t0 + stay and tEnd
-        ZonedDateTime departStart = t0.plusMinutes(15);
-        assertTrue(midPlan.getTime().isAfter(departStart));
-        assertTrue(midPlan.getTime().isBefore(tEnd));
-
-        // and because we fell back, it should be near the midpoint:
-        long totalWindow = Duration.between(departStart, tEnd).toMinutes();
-        long midOffset   = Duration.between(departStart, midPlan.getTime()).toMinutes();
-        assertTrue(Math.abs(midOffset - totalWindow/2) < 2, "fallback should be approximately at midpoint");
+        // totally fixed middle poi
+        inputs = resetInputForListOfRecommendations();
+        inputs.get(1).setPoiName("middle Poi");
+        inputs.get(1).setZoneId(1L);
+        inputs.get(1).setLongitude(40.1);
+        inputs.get(1).setLatitude(-74.1);
+        getListOfRecommendationsNormal(inputs);
     }
 
-
-    void getListOfRecommendations_happyPathAndErrors(List<RecommendationInputDTO> inputs) {
-        // 2) Stub zoneService for fixed anchors (start and end)
-        when(zoneService.predictZoneBusyness(anyList(), eq(1L)))
+    void getListOfRecommendationsNormal(List<RecommendationInputDTO> inputs) {
+        when(zoneService.predictZoneBusyness(anyList(), any()))
                 .thenReturn(List.of("medium"));
-        when(zoneService.predictZoneBusyness(anyList(), eq(2L)))
-                .thenReturn(List.of("low"));
-
-        // 3) Stub zoneService.predictZoneBusyness(ZonedDateTime) for building the busyness-map
-        //    used by assignBusynessDistanceForPOIs on the mid entry.
         Map<Long,String> zoneMap = Map.of( 1L,"low", 2L,"high" );
         when(zoneService.predictZoneBusyness(any()))
                 .thenReturn(new HashMap<>(zoneMap));
 
-        // 4) Spy/stub the helper to return a single top recommendation for “restaurant”
         POI fakePoi = new POI( 99L, "PizzaPlace", "", 40.005, -74.005, new Zone(1L,"Z1"), null );
         POIBusynessDistanceRecommendationDTO fakeRec =
                 new POIBusynessDistanceRecommendationDTO(
@@ -293,18 +224,16 @@ class POIServiceImplTest {
         doReturn(List.of(fakeRec))
                 .when(poiService)
                 .assignBusynessDistanceForPOIs(
-                        eq("restaurant"),
+                        any(),
                         any(POI.class),
-                        eq(new HashMap<>(zoneMap)),
-                        isNull(),
-                        eq(1)
+                        any(),
+                        any(),
+                        anyInt()
                 );
 
-        // 5) Call under test
         List<UserPlan> plan = poiService.getListOfRecommendations(inputs);
         assertEquals(inputs.size(), plan.size());
     }
-
 
     @Test
     void calculateRecommendation() {

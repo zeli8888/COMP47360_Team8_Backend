@@ -113,6 +113,14 @@ public class POIServiceImpl implements POIService {
                 && recommendationInputDTO.getLatitude() != null && recommendationInputDTO.getLongitude() != null;
     }
 
+    int getIndexByBinarySearch(List<TimeGap> gaps, TimeGap newGap, Comparator<TimeGap> gapComparator) {
+        int index = Collections.binarySearch(gaps, newGap, gapComparator);
+        if (index < 0) {
+            index = -index - 1;
+        }
+        return index;
+    }
+
     @Override
     public List<UserPlan> getListOfRecommendations(List<RecommendationInputDTO> recommendationInputDTOS) {
         if (recommendationInputDTOS.size() <= 1) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No recommendation input");
@@ -194,7 +202,7 @@ public class POIServiceImpl implements POIService {
         for (int i = 1; i < anchors.size() - 1; i++) {
             RecommendationInputDTO anchor = anchors.get(i);
             // only fill slots that need recommendation
-            if (!isFixedPoi(anchor) && anchor.getPoiTypeName() != null) {
+            if (!isFixedPoi(anchor)) {
                 // neighbors
                 RecommendationInputDTO prev = anchors.get(i - 1);
                 RecommendationInputDTO next = anchors.get(i + 1);
@@ -302,17 +310,11 @@ public class POIServiceImpl implements POIService {
                     anchors.add(poiOnly);
                     gaps.remove(i);
                     TimeGap newGap = new TimeGap(startIndex, anchors.size()-1, Duration.between(prev.getTime().plusMinutes(prev.getStayMinutes()), poiOnly.getTime()).toMinutes());
-                    int index = Collections.binarySearch(gaps, newGap, gapComparator);
-                    if (index < 0) {
-                        index = -index - 1;
-                    }
+                    int index = getIndexByBinarySearch(gaps, newGap, gapComparator);
                     gaps.add(index, newGap);
 
                     TimeGap newGap2 = new TimeGap(anchors.size()-1, endIndex, Duration.between(poiOnly.getTime().plusMinutes(poiOnly.getStayMinutes()), next.getTime()).toMinutes());
-                    index = Collections.binarySearch(gaps, newGap2, gapComparator);
-                    if (index < 0) {
-                        index = -index - 1;
-                    }
+                    index = getIndexByBinarySearch(gaps, newGap2, gapComparator);
                     gaps.add(index, newGap2);
                     placed = true;
                     break;
@@ -344,14 +346,11 @@ public class POIServiceImpl implements POIService {
                 anchors.add(poiOnly);
                 gaps.remove(0);
                 TimeGap newGap = new TimeGap(startIndex, anchors.size()-1, 0);
-                int index = Collections.binarySearch(gaps, newGap, gapComparator);
-                if (index < 0) {
-                    index = -index - 1;
-                }
+                int index = getIndexByBinarySearch(gaps, newGap, gapComparator);
                 gaps.add(index, newGap);
 
                 TimeGap newGap2 = new TimeGap(anchors.size()-1, endIndex, 0);
-                index = Collections.binarySearch(gaps, newGap2, gapComparator);
+                index = getIndexByBinarySearch(gaps, newGap2, gapComparator);
                 gaps.add(index, newGap2);
             }
         }
@@ -415,17 +414,11 @@ public class POIServiceImpl implements POIService {
                         anchors.add(flex);
                         gaps.remove(i);
                         TimeGap newGap = new TimeGap(startIndex, anchors.size()-1, Duration.between(prev.getTime().plusMinutes(prev.getStayMinutes()), flex.getTime()).toMinutes());
-                        int index = Collections.binarySearch(gaps, newGap, gapComparator);
-                        if (index < 0) {
-                            index = -index - 1;
-                        }
+                        int index = getIndexByBinarySearch(gaps, newGap, gapComparator);
                         gaps.add(index, newGap);
 
                         TimeGap newGap2 = new TimeGap(anchors.size()-1, endIndex, Duration.between(flex.getTime().plusMinutes(flex.getStayMinutes()), next.getTime()).toMinutes());
-                        index = Collections.binarySearch(gaps, newGap2, gapComparator);
-                        if (index < 0) {
-                            index = -index - 1;
-                        }
+                        index = getIndexByBinarySearch(gaps, newGap2, gapComparator);
                         gaps.add(index, newGap2);
                         placed = true;
                         break;
@@ -462,14 +455,11 @@ public class POIServiceImpl implements POIService {
                 anchors.add(flex);
                 gaps.remove(0);
                 TimeGap newGap = new TimeGap(startIndex, anchors.size()-1, 0);
-                int index = Collections.binarySearch(gaps, newGap, gapComparator);
-                if (index < 0) {
-                    index = -index - 1;
-                }
+                int index = getIndexByBinarySearch(gaps, newGap, gapComparator);
                 gaps.add(index, newGap);
 
                 TimeGap newGap2 = new TimeGap(anchors.size()-1, endIndex, 0);
-                index = Collections.binarySearch(gaps, newGap2, gapComparator);
+                index = getIndexByBinarySearch(gaps, newGap2, gapComparator);
                 gaps.add(index, newGap2);
             }
         }
