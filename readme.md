@@ -143,7 +143,7 @@ python load_data.py
     - [planhattan-api.yaml](planhattan-api.yaml) for backend deploy configuration
     - [Jenkinsfile](Jenkinsfile) for jenkins deploy stage configuration
 - data: database data
-- docs: example api calls with Postman
+- docs: example api calls with Postman, check [api_example.md](docs/api_example.md)
 - JMeter: load test results
 - Jacoco: unit/integration test results, check [index.html](jacoco/index.html)
 - uploads: directory for user to upload profile image
