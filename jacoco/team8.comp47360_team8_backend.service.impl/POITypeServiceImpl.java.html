@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>POITypeServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">COMP47360_Team8_Backend</a> &gt; <a href="index.source.html" class="el_package">team8.comp47360_team8_backend.service.impl</a> &gt; <span class="el_source">POITypeServiceImpl.java</span></div><h1>POITypeServiceImpl.java</h1><pre class="source lang-java linenums">package team8.comp47360_team8_backend.service.impl;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import team8.comp47360_team8_backend.model.POIType;
+import team8.comp47360_team8_backend.repository.POITypeRepository;
+import team8.comp47360_team8_backend.service.POITypeService;
+
+import java.util.List;
+
+/**
+ * @Author : Ze Li
+ * @Date : 02/06/2025 21:59
+ * @Version : V1.0
+ * @Description :
+ */
+@Service
+<span class="fc" id="L18">public class POITypeServiceImpl implements POITypeService {</span>
+    @Autowired
+    private POITypeRepository poiTypeRepository;
+
+    @Override
+    public List&lt;POIType&gt; getAllPOITypes() {
+<span class="fc" id="L24">        return poiTypeRepository.findAll();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

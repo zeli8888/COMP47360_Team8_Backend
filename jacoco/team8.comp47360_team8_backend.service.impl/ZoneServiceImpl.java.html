@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ZoneServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">COMP47360_Team8_Backend</a> &gt; <a href="index.source.html" class="el_package">team8.comp47360_team8_backend.service.impl</a> &gt; <span class="el_source">ZoneServiceImpl.java</span></div><h1>ZoneServiceImpl.java</h1><pre class="source lang-java linenums">package team8.comp47360_team8_backend.service.impl;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.server.ResponseStatusException;
+import team8.comp47360_team8_backend.repository.ZoneRepository;
+import team8.comp47360_team8_backend.service.ZoneService;
+
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+/**
+ * @Author : Ze Li
+ * @Date : 03/06/2025 11:56
+ * @Version : V1.0
+ * @Description :
+ */
+
+@Service
+<span class="fc" id="L31">public class ZoneServiceImpl implements ZoneService {</span>
+    @Value(&quot;${ml.url}&quot;)
+    private String ML_URL;
+    @Autowired
+    private ZoneRepository zoneRepository;
+<span class="fc" id="L36">    private final RestTemplate restTemplate = new RestTemplate();</span>
+
+    private String formatDateTime(ZonedDateTime dateTime) {
+<span class="fc" id="L39">        Instant instant = dateTime</span>
+<span class="fc" id="L40">                .withZoneSameInstant(ZoneOffset.UTC)</span>
+<span class="fc" id="L41">                .toInstant()</span>
+<span class="fc" id="L42">                .truncatedTo(ChronoUnit.MICROS); // 1 ms = 1e-6 s</span>
+
+<span class="fc" id="L44">        return DateTimeFormatter.ISO_INSTANT.format(instant);</span>
+    }
+
+    @Override
+    public HashMap&lt;Long, String&gt; predictZoneBusyness(ZonedDateTime dateTime) {
+<span class="fc" id="L49">        List&lt;Long&gt; zoneIds = zoneRepository.findDistinctZoneIds();</span>
+<span class="fc" id="L50">        HashMap&lt;Long, String&gt; zoneBusynessMap = new HashMap&lt;&gt;();</span>
+
+        try {
+            // Prepare request body
+<span class="fc" id="L54">            HashMap&lt;String, Object&gt; requestBody = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L55">            requestBody.put(&quot;zoneIds&quot;, zoneIds);</span>
+<span class="fc" id="L56">            requestBody.put(&quot;dateTime&quot;, formatDateTime(dateTime));</span>
+
+            // Set headers
+<span class="fc" id="L59">            HttpHeaders headers = new HttpHeaders();</span>
+<span class="fc" id="L60">            headers.setContentType(MediaType.APPLICATION_JSON);</span>
+
+<span class="fc" id="L62">            HttpEntity&lt;HashMap&lt;String, Object&gt;&gt; entity = new HttpEntity&lt;&gt;(requestBody, headers);</span>
+
+            // Send POST request
+<span class="fc" id="L65">            ResponseEntity&lt;Map&gt; response = restTemplate.exchange(</span>
+                    ML_URL + &quot;predict_multi_zones&quot;,
+                    HttpMethod.POST,
+                    entity,
+                    Map.class
+            );
+
+<span class="fc bfc" id="L72" title="All 4 branches covered.">            if (response.getStatusCode() == HttpStatus.OK &amp;&amp; response.getBody() != null) {</span>
+<span class="fc" id="L73">                Map&lt;String, Object&gt; responseBody = response.getBody();</span>
+<span class="fc" id="L74">                List&lt;String&gt; busynessList = (List&lt;String&gt;) responseBody.get(&quot;busyness&quot;);</span>
+
+                // Match zone IDs with corresponding busyness values
+<span class="fc bfc" id="L77" title="All 2 branches covered.">                for (int i = 0; i &lt; zoneIds.size(); i++) {</span>
+<span class="fc" id="L78">                    zoneBusynessMap.put(zoneIds.get(i), busynessList.get(i));</span>
+                }
+            }
+<span class="fc" id="L81">        } catch (Exception e) {</span>
+<span class="fc" id="L82">            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, &quot;Failed to predict busyness, please try again later.&quot;);</span>
+<span class="fc" id="L83">        }</span>
+<span class="fc" id="L84">        return zoneBusynessMap;</span>
+    }
+
+    @Override
+    public List&lt;String&gt; predictZoneBusyness(List&lt;ZonedDateTime&gt; zonedDateTimeList, Long zoneId) {
+<span class="fc" id="L89">        List&lt;String&gt; busynessList = new ArrayList&lt;&gt;();</span>
+
+        try {
+<span class="fc" id="L92">            HashMap&lt;String, Object&gt; requestBody = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L93">            requestBody.put(&quot;zoneId&quot;, zoneId);</span>
+<span class="fc" id="L94">            requestBody.put(&quot;zonedDateTimeList&quot;, zonedDateTimeList.stream()</span>
+<span class="fc" id="L95">                    .map(this::formatDateTime)</span>
+<span class="fc" id="L96">                    .collect(Collectors.toList()));</span>
+
+<span class="fc" id="L98">            HttpHeaders headers = new HttpHeaders();</span>
+<span class="fc" id="L99">            headers.setContentType(MediaType.APPLICATION_JSON);</span>
+
+<span class="fc" id="L101">            HttpEntity&lt;HashMap&lt;String, Object&gt;&gt; entity = new HttpEntity&lt;&gt;(requestBody, headers);</span>
+
+<span class="fc" id="L103">            ResponseEntity&lt;Map&gt; response = restTemplate.exchange(</span>
+                    ML_URL + &quot;predict_single_zone&quot;,
+                    HttpMethod.POST,
+                    entity,
+                    Map.class
+            );
+
+<span class="fc bfc" id="L110" title="All 4 branches covered.">            if (response.getStatusCode() == HttpStatus.OK &amp;&amp; response.getBody() != null) {</span>
+<span class="fc" id="L111">                Map&lt;String, Object&gt; responseBody = response.getBody();</span>
+<span class="fc" id="L112">                busynessList = (List&lt;String&gt;) responseBody.get(&quot;busyness&quot;);</span>
+            }
+<span class="fc" id="L114">        } catch (Exception e) {</span>
+<span class="fc" id="L115">            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, &quot;Failed to predict busyness, please try again later.&quot;);</span>
+<span class="fc" id="L116">        }</span>
+
+<span class="fc" id="L118">        return busynessList;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

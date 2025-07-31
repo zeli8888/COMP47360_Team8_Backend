@@ -1,102 +1,190 @@
-## This is a Spring Boot application with maven as dependency manager
-----------------------
-#### Please check database setting in 
-- src/main/resources/application.properties.
+# 🛞 Planhattan Backend API
 
-#### The default database name for this application is comp47360
---------------------
-### To start the application in development mode, please run
-- mvn clean package
-- mvn spring-boot:run
--------------------------
-### Check API by starting this application and open
-### http://localhost:8080/api/swagger-ui/index.html
-### The frontend url is set to http://localhost:3000, run frontend in this url to avoid cross-origin issue
----------------
-### Example API with Postman
-#### poi list & zone busyness
-- query params & poi list:
-![alt text](docs/get_pois.png)
-- zone busyness:
-![alt text](docs/get_pois2.png)
-#### Recommendation API:
-- POST Request
-- fixed location should contain latitude, longitude, poiName, zoneId, time, transitType (optional) 
-- uncertain location should contain poiTypeName, time, transitType (optional) 
-- the first location should be fixed start location without transitType
-![alt text](docs/get_pois_recommendation.png)
-#### POI Type API:
-![alt text](docs/get_poitypes.png)
-#### Zone busyness API:
-- predict one zone's busyness for continuous predictedHours after a specific time
-![alt text](docs/get_zones.png)
-#### All Zone busyness API:
-- predict all zones' busyness for a specific time
-![alt text](docs/get_zones_all.png)
-#### Weather API:
-- check https://openweathermap.org/api/one-call-3 for details
-![alt text](docs/get_weather.png)
-#### Register API:
-- userName and password are necessary.
-- userPicture will be ignored, should be updated after registration.
-- email will be linked automatically when user login through third-party account.
-![alt text](docs/post_register.png)
-#### Login API:
-- has to be form login
-![alt text](docs/post_login.png)
-#### CSRF Token API:
-- has to login first
-- then get the csrf token
-![alt text](docs/get_csrf_token.png)
-- then add the token to the header with ```X-CSRF-TOKEN:{token}``` for following requests that need authentication.
-![alt text](docs/get_csrf_token2.png)
-![alt text](docs/get_csrf_token3.png)
-#### Update User Picture API:
-- has to login first & set the csrf token in header
-- file size limit is 5MB
-- file type should be image/jpeg, image/png, image/gif
-![alt text](docs/post_user_picture.png)
-#### Get User Picture API:
-- don't need login, userPicture is public.
-![alt text](docs/get_user_picture.png)
-#### Get User Details API:
-- has to login first & set the csrf token in header
-- you can use ```<img src={user.userPicture}>```  directly in html to display the picture
-![alt text](docs/get_user.png)
-#### Update User Details API:
-- has to login first & set the csrf token in header
-- we don't offer email update service, it will link to third-party account automatically
-- userPicture will be ignored, should be updated by posting.
-![alt text](docs/put_user.png)
-#### Logout API:
-- has to login first & set the csrf token in header
-![alt text](docs/post_logout.png)
-#### Delete User API:
-- has to login first & set the csrf token in header
-![alt text](docs/delete_user.png)
-#### Add User Plan API:
-- has to login first & set the csrf token in header
-![alt text](docs/post_userplans.png)
-#### Add Multiple User Plan API:
-- has to login first & set the csrf token in header
-![alt text](docs/post_userplans_multiple.png)
-#### Get User Plan API:
-- has to login first & set the csrf token in header
-![alt text](docs/get_userplans.png)
-#### Update User Plan API:
-- has to login first & set the csrf token in header
-![alt text](docs/put_userplans.png)
-#### Delete User Plan API:
-- has to login first & set the csrf token in header
-![alt text](docs/delete_userplans.png)
-#### Delete Multiple User Plan API:
-- has to login first & set the csrf token in header
-![alt text](docs/delete_userplans_multiple.png)
----------------------
-### Testing
-- Please check the testing folder src/test/java/team8/comp47360_team8_backend
-- For unit testing, there are test cases for controller, service
-- If you want to contribute, please create a new branch and push to github. After you finish, please message me to avoid duplicate work.
-- I have done POIControllerTest, you can check for reference.
-- We will implement integration testing in the future.
-- This is not mandatory, so only do it when you have free time.
+**[Planhattan](https://planhattan.ddns.net)** is a responsive web application designed to helps tourists plan their day by predicting and visualising crowd data for popular attractions, restaurants, parks, and museums. 🎉
+
+**Frontend Repository**: https://github.com/RaghulPrasath-Here/PlanHattan-FrontEnd.git
+**Machine Learning Model Repository**: https://github.com/Always228474/COMP47360_Team8_Data.git
+
+![Project Structure](docs/project_structure.png)
+
+---
+
+## 📋 Table of Contents
+- [✨ Features](#-features)
+- [🚀 Getting Started](#-getting-started)
+  - [⚙️ Configuration](#️-configuration)
+  - [🔧 Installation](#-installation)
+- [💻 Usage](#-usage)
+- [🐛 Common Bugs](#-common-bugs)
+- [📂 Project Structure](#-project-structure)
+- [🤝 Contributing](#-contributing)
+- [📝 License](#-license)
+- [📧 Contact](#-contact)
+
+---
+
+## ✨ Features
+- **POI Recommendation System👍**
+    - leverages machine learning models to predict the busyness of different zones in New York City. 
+    - handles requests for supported POI categories
+    - utilizes two recommendation algorithms to suggest optimal POIs based on user input.
+        - provides top-k recommended POIs at each stage of the itinerary planning process, enabling users to make informed decisions throughout the planning.
+        - generates a comprehensive daily travel plan tailored to the user’s preferences.
+        - Both recommendation algorithms consider predicted busyness and distance to offer reasonable and practical suggestions.
+
+- **User Management System🪪**
+    - responsible for managing user information and maintaining a record of users’ historical travel plans.
+    - supports two login methods:
+        - Traditional form login, where passwords are securely encoded using the bcrypt algorithm.
+        - Google login, which implements the standard OAuth 2.0 workflow to ensure enhanced security.
+        - Session management is utilized to maintain the user’s login state for both methods.
+
+- **Security Measures🔐**
+    - A strict CORS (Cross-Origin Resource Sharing) policy is applied to restrict AJAX requests to requests originating from the front-end domain.
+    - The Spring Boot Security chain is employed to enforce authentication for all endpoints that require user login.
+    - CSRF (Cross-Site Request Forgery) tokens are included for all potentially risky endpoints to safeguard user sessions.
+
+- **Complete Test Cases🧑‍🔬**
+    - Unit Testing for all controllers and services
+    - Integration Test for authentication and security
+    - Load Test using JMeter on UCD College offered server
+        - CPU: QEMU Virtual CPU version 2.5+, 2 cores, 2GHz, 64 bits
+        - Memory: 4GB
+        - Storage: 32GB
+---
+
+## 🚀 Getting Started
+
+### ⚙️ Configuration
+- Check [application.properties](src/main/resources/application.properties) for application configuration.
+- Check [mysql.yaml](mysql.yaml) for mysql database configuration.
+- Check [planhattan-api.yaml](planhattan-api.yaml) for deploy configuration
+- To configure the project, set the following environment variables first:
+
+    ```env
+    PLANHATTAN_MYSQL_URL=your_mysql_database_url
+    MYSQL_PASSWORD=your_mysql_password
+    PLANHATTAN_MYSQL_VOLUME=your_expected_mysql_container_volume_url
+    PLANHATTAN_ML_URL=your_machine_learning_model_container_url
+    PLANHATTAN_UPLOADS=your_expected_container_volume_url_for_user_upload_files
+    GOOGLE_OAUTH2_CLIENT_ID=your_Google_client_Id
+    GOOGLE_OAUTH2_CLIENT_SECRET=your_Google_client_password
+    OPEN_WEATHER_KEY=your_open_weather_key
+    ```
+
+### 🔧 Installation
+To get started with **Planhattan Backend API**, follow these steps:
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/zeli8888/COMP47360_Team8_Backend.git
+   ```
+
+2. Navigate to the project directory:
+   ```bash
+   cd COMP47360_Team8_Backend
+   ```
+
+3. Install dependencies and run test (make sure Maven is correctly configured):
+   ```bash
+   mvn test
+   ```
+   optional: check the test report with Jacoco:
+   ```bash
+   mvn test jacoco:report
+   ```
+   report will be generated at
+   ```bash
+   /target/site/jacoco/index.html
+   ```
+
+
+---
+
+## 💻 Usage
+Here’s how to deploy **Planhattan Backend API**:
+
+1. fork this github repository:
+
+2. replace zeli8888 in [Jenkinsfile](Jenkinsfile) and [planhattan-api.yaml](planhattan-api.yaml) to your docker account:
+
+3. deploy jenkins pipeline with your forked github repository
+
+Or Simply use my docker image (can't customize)
+
+1. pull backend docker image
+```bash
+docker pull zeli8888/planhattan-api:{version_you_like}
+```
+2. run mysql container
+```bash
+docker-compose -p planhattan -f mysql.yaml up -d --force-recreate
+```
+3. run backend docker container
+```bash
+export version=${version_you_like} && docker-compose -p planhattan -f planhattan-api.yaml up -d --force-recreate
+```
+
+4. initial data load (Only required once, please install required python packages, or manually load data from [poitype_data.csv](data/poitype_data.csv), [zone_data.csv](data/zone_data.csv) and [poi_data.csv](data/poi_data.csv))
+```bash
+cd data
+python load_data.py
+```
+
+5. Access the application at `http://127.0.0.1:8000`.
+
+6. Configure Nginx for outer access (HTTPS is necessary).
+
+---
+
+## 📂 Project Structure
+- deploy files: 
+    - [mysql.yaml](mysql.yaml) for mysql database configuration.
+    - [planhattan-api.yaml](planhattan-api.yaml) for backend deploy configuration
+    - [Jenkinsfile](Jenkinsfile) for jenkins deploy stage configuration
+- data: database data
+- docs: example api calls with Postman
+- JMeter: load test results
+- Jacoco: unit/integration test results, check [index.html](jacoco/index.html)
+- uploads: directory for user to upload profile image
+- src: follow a typical Spring MVC (Model-View-Controller) pattern.
+---
+
+## 🤝 Contributing
+We welcome contributions! 🎉 If you'd like to contribute, please follow these steps:
+
+1. Fork the repository.
+
+2. Create a new branch:
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+
+3. Commit your changes:
+   ```bash
+   git commit -m "Add your awesome feature"
+   ```
+
+4. Push to the branch:
+   ```bash
+   git push origin feature/your-feature-name
+   ```
+
+5. Open a pull request. 🚀
+
+---
+
+## 📝 License
+This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details. 🐜
+
+---
+
+## 📧 Contact
+If you have any questions or feedback, feel free to reach out:
+
+- **Email**: zeli8888@outlook.com 📩
+- **GitHub Issues**: [Open an Issue](https://github.com/zeli8888/BikeShareApp/issues) 🐛
+
+---
+
+Made with ❤️ by [Ze Li](https://github.com/zeli8888). Happy coding! 🎉

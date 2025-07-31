@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SpringSecurityConfiguration.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">COMP47360_Team8_Backend</a> &gt; <a href="index.source.html" class="el_package">team8.comp47360_team8_backend.security</a> &gt; <span class="el_source">SpringSecurityConfiguration.java</span></div><h1>SpringSecurityConfiguration.java</h1><pre class="source lang-java linenums">package team8.comp47360_team8_backend.security;
+
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.security.authentication.AuthenticationProvider;
+
+import java.util.Arrays;
+import java.util.Collections;
+
+/**
+ * @Author : Ze Li
+ * @Date : 02/06/2025 22:23
+ * @Version : V1.0
+ * @Description :
+ */
+
+@Configuration
+@EnableWebSecurity
+<span class="fc" id="L30">public class SpringSecurityConfiguration {</span>
+<span class="fc" id="L31">    public static final String[] excludedURLs = {&quot;/v3/api-docs/**&quot;, &quot;/swagger-ui/**&quot;};</span>
+
+    @Value(&quot;${frontend.urls}&quot;)
+    private String[] frontendUrls;
+
+    @Autowired
+    private AuthenticationProvider authenticationProvider;
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
+<span class="fc" id="L42">        CorsConfiguration configuration = new CorsConfiguration();</span>
+<span class="fc" id="L43">        configuration.setAllowedOrigins(Arrays.asList(frontendUrls));</span>
+<span class="fc" id="L44">        configuration.setAllowedMethods(Arrays.asList(&quot;GET&quot;, &quot;POST&quot;, &quot;PUT&quot;, &quot;DELETE&quot;, &quot;OPTIONS&quot;));</span>
+<span class="fc" id="L45">        configuration.setAllowedHeaders(Collections.singletonList(&quot;*&quot;));</span>
+<span class="fc" id="L46">        configuration.setAllowCredentials(true); // cookie allowed</span>
+
+<span class="fc" id="L48">        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();</span>
+<span class="fc" id="L49">        source.registerCorsConfiguration(&quot;/**&quot;, configuration);</span>
+
+<span class="fc" id="L51">        http.cors(cors -&gt; cors.configurationSource(source));</span>
+<span class="fc" id="L52">        http.csrf(csrf -&gt; csrf</span>
+<span class="fc" id="L53">                .csrfTokenRepository(new HttpSessionCsrfTokenRepository())</span>
+                // only generate tokens when needed.
+                // Without this, spring security will generate a token for every request even if with HttpSessionCsrfTokenRepository
+<span class="fc" id="L56">                .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())</span>
+<span class="fc" id="L57">                .requireCsrfProtectionMatcher(request -&gt; {</span>
+<span class="fc" id="L58">                    String requestUri = request.getRequestURI();</span>
+<span class="fc" id="L59">                    String contextPath = request.getContextPath();</span>
+                    // remove context path
+<span class="fc" id="L61">                    requestUri = requestUri.substring(contextPath.length());</span>
+                    // protect get requests for endpoints starting with /user and /userplans
+<span class="fc bfc" id="L63" title="All 2 branches covered.">                    if (HttpMethod.GET.matches(request.getMethod())) {</span>
+                        // allow get requests for public user profile pictures
+<span class="fc bfc" id="L65" title="All 2 branches covered.">                        return !requestUri.startsWith(&quot;/user/picture/&quot;) &amp;&amp;</span>
+<span class="fc bfc" id="L66" title="All 4 branches covered.">                                (requestUri.startsWith(&quot;/userplans&quot;) || requestUri.startsWith(&quot;/user&quot;));</span>
+                    }
+                    // allow post requests with /register, /login and /pois/recommendation endpoints
+<span class="fc bfc" id="L69" title="All 2 branches covered.">                    if (HttpMethod.POST.matches(request.getMethod())) {</span>
+<span class="fc bfc" id="L70" title="All 4 branches covered.">                        return !(&quot;/register&quot;.equals(requestUri) || &quot;/login&quot;.equals(requestUri)</span>
+<span class="fc bfc" id="L71" title="All 2 branches covered.">                                || &quot;/pois/recommendation&quot;.equals(requestUri));</span>
+                    }
+                    // protect other post/put/delete requests
+<span class="fc" id="L74">                    return true;</span>
+                })
+        );
+
+<span class="fc" id="L78">        http.authorizeHttpRequests(</span>
+<span class="fc" id="L79">                authorizeRequest -&gt; authorizeRequest.requestMatchers(HttpMethod.OPTIONS, &quot;/**&quot;).permitAll()</span>
+<span class="fc" id="L80">                        .requestMatchers(excludedURLs).permitAll()</span>
+<span class="fc" id="L81">                        .requestMatchers(&quot;/weather&quot;).permitAll()</span>
+<span class="fc" id="L82">                        .requestMatchers(&quot;/poitypes/**&quot;).permitAll()</span>
+<span class="fc" id="L83">                        .requestMatchers(&quot;/pois/**&quot;).permitAll()</span>
+<span class="fc" id="L84">                        .requestMatchers(&quot;/zones/**&quot;).permitAll()</span>
+<span class="fc" id="L85">                        .requestMatchers(HttpMethod.GET, &quot;/user/picture/**&quot;).permitAll()</span>
+<span class="fc" id="L86">                        .requestMatchers(HttpMethod.GET, &quot;/api/oauth2/authorization/google&quot;).permitAll()</span>
+<span class="fc" id="L87">                        .requestMatchers(HttpMethod.POST, &quot;/register&quot;).permitAll()</span>
+<span class="fc" id="L88">                        .requestMatchers(HttpMethod.POST, &quot;/login&quot;).permitAll()</span>
+<span class="fc" id="L89">                        .requestMatchers(HttpMethod.POST, &quot;/logout`&quot;).authenticated()</span>
+<span class="fc" id="L90">                        .requestMatchers(HttpMethod.GET, &quot;/csrf-token&quot;).authenticated()</span>
+<span class="fc" id="L91">                        .requestMatchers(&quot;/user/**&quot;).authenticated()</span>
+<span class="fc" id="L92">                        .requestMatchers(&quot;/userplans/**&quot;).authenticated()</span>
+<span class="fc" id="L93">                        .anyRequest().permitAll()</span>
+        );
+
+<span class="fc" id="L96">        http.formLogin(formLogin -&gt; formLogin</span>
+<span class="fc" id="L97">                .loginPage(frontendUrls[0]+&quot;/signin&quot;)</span>
+<span class="fc" id="L98">                .loginProcessingUrl(&quot;/login&quot;)</span>
+<span class="fc" id="L99">                .successHandler((request, response, authentication) -&gt; {response.setStatus(HttpServletResponse.SC_OK);})</span>
+<span class="fc" id="L100">                .failureHandler((request, response, exception) -&gt; {response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);})</span>
+        );
+
+<span class="fc" id="L103">        http.oauth2Login(oauth2 -&gt; oauth2</span>
+<span class="fc" id="L104">                .loginPage(frontendUrls[0]+&quot;/signin&quot;)</span>
+<span class="fc" id="L105">                .defaultSuccessUrl(frontendUrls[0]+&quot;/google-callback&quot;)</span>
+        );
+
+<span class="fc" id="L108">        http.logout(logout -&gt; logout</span>
+                // URL to trigger logout, Post request
+<span class="fc" id="L110">                .logoutUrl(&quot;/logout&quot;)</span>
+                // Invalidate the session
+<span class="fc" id="L112">                .invalidateHttpSession(true)</span>
+                // Delete the session cookie
+<span class="fc" id="L114">                .deleteCookies(&quot;JSESSIONID&quot;)</span>
+<span class="fc" id="L115">                .logoutSuccessHandler((request, response, authentication) -&gt; {</span>
+<span class="fc" id="L116">                    response.setStatus(HttpServletResponse.SC_OK);})</span>
+        );
+
+<span class="fc" id="L119">        http.authenticationProvider(authenticationProvider);</span>
+
+<span class="fc" id="L121">        return http.build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

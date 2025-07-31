@@ -1,0 +1,347 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">COMP47360_Team8_Backend</a> &gt; <a href="index.source.html" class="el_package">team8.comp47360_team8_backend.service.impl</a> &gt; <span class="el_source">UserServiceImpl.java</span></div><h1>UserServiceImpl.java</h1><pre class="source lang-java linenums">package team8.comp47360_team8_backend.service.impl;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
+import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
+import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import team8.comp47360_team8_backend.exception.EmailAlreadyExistException;
+import team8.comp47360_team8_backend.exception.UserAlreadyExistException;
+import team8.comp47360_team8_backend.model.User;
+import team8.comp47360_team8_backend.repository.UserRepository;
+import team8.comp47360_team8_backend.security.CustomUserDetails;
+import team8.comp47360_team8_backend.service.UserService;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+/**
+ * @Author : Ze Li
+ * @Date : 17/06/2025 18:02
+ * @Version : V1.0
+ * @Description :
+ */
+@Service
+<span class="fc" id="L53">public class UserServiceImpl implements UserService, UserDetailsService, OAuth2UserService&lt;OAuth2UserRequest, OAuth2User&gt; {</span>
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+<span class="fc" id="L60">    private final DefaultOAuth2UserService delegate = new DefaultOAuth2UserService();</span>
+
+    @Value(&quot;${upload.path}&quot;)
+    private String uploadPath;
+
+    @Value(&quot;${user.picture.size}&quot;)
+    private int userPictureSize;
+
+<span class="fc" id="L68">    private static final String[] ALLOWED_CONTENT_TYPES = {&quot;image/jpeg&quot;, &quot;image/png&quot;, &quot;image/gif&quot;};</span>
+
+    @Override
+    public UserDetails loadUserByUsername(String userName) {
+<span class="fc bfc" id="L72" title="All 2 branches covered.">        if (userName == null) throw new UsernameNotFoundException(&quot;Please offer user name or email!&quot;);</span>
+<span class="fc" id="L73">        Optional&lt;User&gt; opt = userRepository.findByUserName(userName);</span>
+
+<span class="fc bfc" id="L75" title="All 2 branches covered.">        if (!opt.isPresent()) {</span>
+<span class="fc" id="L76">            opt = userRepository.findByEmail(userName);</span>
+        }
+
+<span class="fc bfc" id="L79" title="All 2 branches covered.">        if(!opt.isPresent())</span>
+<span class="fc" id="L80">            throw new UsernameNotFoundException(&quot;User not exist!&quot;);</span>
+        else {
+<span class="fc" id="L82">            User user = opt.get();</span>
+<span class="fc bfc" id="L83" title="All 2 branches covered.">            if (user.getPassword() == null) throw new UsernameNotFoundException(&quot;Please login through third-party Account!&quot;);</span>
+<span class="fc" id="L84">            Set&lt;GrantedAuthority&gt; authorities = new HashSet&lt;&gt;();</span>
+            // Add a default role directly without the ROLE_ prefix
+<span class="fc" id="L86">            authorities.add(new SimpleGrantedAuthority(&quot;ROLE_USER&quot;)); // replace &quot;USER&quot; with your actual default role</span>
+<span class="fc" id="L87">            return new CustomUserDetails(</span>
+<span class="fc" id="L88">                    user.getUserName(),</span>
+<span class="fc" id="L89">                    user.getPassword(),</span>
+<span class="fc" id="L90">                    user.getId(),</span>
+                    authorities
+            );
+        }
+    }
+
+    @Override
+    @Transactional
+    public OAuth2User loadUser(OAuth2UserRequest request) throws OAuth2AuthenticationException {
+        // Get User Info from Google with access_token
+<span class="fc" id="L100">        OAuth2User oauthUser = delegate.loadUser(request);</span>
+<span class="fc" id="L101">        String googleId = oauthUser.getAttribute(&quot;sub&quot;);</span>
+<span class="fc" id="L102">        String email = oauthUser.getAttribute(&quot;email&quot;);</span>
+<span class="fc" id="L103">        String pictureUrl = oauthUser.getAttribute(&quot;picture&quot;);</span>
+<span class="fc" id="L104">        String userName = oauthUser.getAttribute(&quot;given_name&quot;);</span>
+//        String fullName = oauthUser.getAttribute(&quot;name&quot;);
+<span class="fc bfc" id="L106" title="All 2 branches covered.">        if (googleId == null) throw new UsernameNotFoundException(&quot;Google ID cannot be null&quot;);</span>
+
+        // Check if the user already exists by Google ID
+<span class="fc" id="L109">        User localUser = userRepository.findByGoogleId(googleId).orElse(null);</span>
+<span class="fc" id="L110">        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();</span>
+        // Google user not registered and user is logged in
+<span class="fc bfc" id="L112" title="All 4 branches covered.">        if (localUser == null &amp;&amp; authentication != null) {</span>
+<span class="fc" id="L113">            CustomUserDetails userDetail = (CustomUserDetails) authentication.getPrincipal();</span>
+<span class="fc" id="L114">            User currentUser = userRepository.findById(userDetail.getUserId()).orElseThrow(() -&gt; new UsernameNotFoundException(&quot;Invalid user authentication state!&quot;));</span>
+            // User without google id should link with new Google Account
+            // User already has google id should create new Google Account
+<span class="fc bfc" id="L117" title="All 2 branches covered.">            localUser = currentUser.getGoogleId() == null ? currentUser: null;</span>
+        }
+
+<span class="fc bfc" id="L120" title="All 2 branches covered.">        if (localUser != null) {</span>
+            // Update user email
+<span class="fc" id="L122">            String localEmail = localUser.getEmail();</span>
+<span class="fc bfc" id="L123" title="All 2 branches covered.">            if (!Objects.equals(localEmail, email)) {</span>
+<span class="fc bfc" id="L124" title="All 4 branches covered.">                if (email == null || userRepository.findByEmail(email).isPresent()) {</span>
+<span class="fc" id="L125">                    localUser.setEmail(null);</span>
+                } else {
+<span class="fc" id="L127">                    localUser.setEmail(email);</span>
+                }
+            }
+            // Update user picture
+<span class="fc bfc" id="L131" title="All 2 branches covered.">            if (pictureUrl != null) {</span>
+<span class="fc" id="L132">                deleteUserPicture(localUser.getUserPicture());</span>
+<span class="fc" id="L133">                localUser.setUserPicture(pictureUrl);</span>
+            }
+            // Set google id
+<span class="fc" id="L136">            localUser.setGoogleId(googleId);</span>
+<span class="fc" id="L137">            userRepository.save(localUser);</span>
+<span class="fc" id="L138">        } else {</span>
+            // Create a new user
+<span class="fc bfc" id="L140" title="All 4 branches covered.">            if (email != null &amp;&amp; userRepository.findByEmail(email).isPresent()) {</span>
+                // someone else has the same email registered with Google (almost impossible)
+<span class="fc" id="L142">                email = null;</span>
+            }
+<span class="fc" id="L144">            localUser = createUser(new User(null, googleId, null, email, null, null, pictureUrl));</span>
+        }
+
+<span class="fc" id="L147">        Set&lt;GrantedAuthority&gt; authorities = new HashSet&lt;&gt;();</span>
+        // Add a default role directly without the ROLE_ prefix
+<span class="fc" id="L149">        authorities.add(new SimpleGrantedAuthority(&quot;ROLE_USER&quot;)); // replace &quot;USER&quot; with your actual default role</span>
+        // Use given_name as temporary username and password for constructor of CustomUserDetails, won't be used for authentication
+<span class="fc" id="L151">        return new CustomUserDetails(</span>
+                oauthUser,
+                userName,
+                userName,
+<span class="fc" id="L155">                localUser.getId(),</span>
+                authorities
+        );
+    }
+
+    @Override
+    public User createUser(User user) {
+<span class="fc" id="L162">        user.setId(null);</span>
+<span class="fc" id="L163">        user.setUserPlans(null);</span>
+<span class="fc" id="L164">        String googleId = user.getGoogleId();</span>
+<span class="fc bfc" id="L165" title="All 4 branches covered.">        if (googleId == null &amp;&amp; user.getUserName() == null) throw new UsernameNotFoundException(&quot;User name cannot be null&quot;);</span>
+        // third party account should have no userName and password
+<span class="fc bfc" id="L167" title="All 2 branches covered.">        if (googleId != null) {</span>
+<span class="fc" id="L168">            user.setUserName(null);</span>
+<span class="fc" id="L169">            user.setPassword(null);</span>
+        }
+<span class="fc" id="L171">        String userName = user.getUserName();</span>
+<span class="fc bfc" id="L172" title="All 2 branches covered.">        if (userName != null) {</span>
+<span class="fc" id="L173">            validateUsername(userName);</span>
+            // normal user register should verify email with Google account
+<span class="fc" id="L175">            user.setEmail(null);</span>
+            // normal user register should set profile picture afterward by posting.
+<span class="fc" id="L177">            user.setUserPicture(null);</span>
+        }
+<span class="fc" id="L179">        String email = user.getEmail();</span>
+        // third party account register with email
+<span class="fc bfc" id="L181" title="All 2 branches covered.">        if (email != null) validateEmail(email);</span>
+
+<span class="fc" id="L183">        String passwd= user.getPassword();</span>
+        String encodedPassword;
+<span class="fc bfc" id="L185" title="All 4 branches covered.">        if (passwd == null &amp;&amp; userName != null){</span>
+            // normal user register with no password
+<span class="fc" id="L187">            throw new UsernameNotFoundException(&quot;User password cannot be null&quot;);</span>
+<span class="fc bfc" id="L188" title="All 2 branches covered.">        } else if (passwd == null) {</span>
+            // new user register with third-party account
+<span class="fc" id="L190">            encodedPassword = null;</span>
+        } else {
+            // normal user register
+<span class="fc" id="L193">            encodedPassword = passwordEncoder.encode(passwd);</span>
+        }
+<span class="fc" id="L195">        user.setPassword(encodedPassword);</span>
+<span class="fc" id="L196">        userRepository.save(user);</span>
+        // for third-party account, the picture will be remote url
+        // for normal account, picture will be null
+<span class="fc" id="L199">        return new User(user.getId(), null, user.getEmail(), user.getUserName(), user.getUserPicture());</span>
+    }
+
+    @Override
+    public User updateUser(User user) {
+<span class="fc" id="L204">        User storedUser = getUserFromAuthentication();</span>
+<span class="fc bfc" id="L205" title="All 4 branches covered.">        if (!Objects.equals(user.getUserName(), storedUser.getUserName()) &amp;&amp; user.getUserName() != null) {</span>
+            // update user name
+<span class="fc" id="L207">            validateUsername(user.getUserName());</span>
+<span class="fc" id="L208">            storedUser.setUserName(user.getUserName());</span>
+        }
+        // we don't offer email update service for now, it should be linked with Google account
+<span class="fc bfc" id="L211" title="All 2 branches covered.">        if (user.getPassword() != null) {</span>
+<span class="fc" id="L212">            String encodedPassword = passwordEncoder.encode(user.getPassword());</span>
+<span class="fc" id="L213">            storedUser.setPassword(encodedPassword);</span>
+        }
+        // update user picture by posting, not here
+<span class="fc" id="L216">        userRepository.save(storedUser);</span>
+
+<span class="fc" id="L218">        return getUserWithoutIdPassword(storedUser);</span>
+    }
+
+    @Override
+    public User getUser() {
+<span class="fc" id="L223">        User user = getUserFromAuthentication();</span>
+<span class="fc" id="L224">        return getUserWithoutIdPassword(user);</span>
+    }
+
+    @Override
+    public void deleteUser() {
+<span class="fc" id="L229">        User user = getUserFromAuthentication();</span>
+<span class="fc" id="L230">        String pictureUri = user.getUserPicture();</span>
+<span class="fc" id="L231">        deleteUserPicture(pictureUri);</span>
+<span class="fc" id="L232">        userRepository.delete(user);</span>
+<span class="fc" id="L233">    }</span>
+
+    @Override
+    public String updateUserPicture(MultipartFile file) {
+<span class="fc bfc" id="L237" title="All 6 branches covered.">        if (file.isEmpty() || file.getOriginalFilename() == null || file.getOriginalFilename().isEmpty()) {</span>
+<span class="fc" id="L238">            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, &quot;Please select a file to upload.&quot;);</span>
+        }
+
+        // Check file size
+<span class="fc bfc" id="L242" title="All 2 branches covered.">        if (file.getSize() &gt; userPictureSize) {</span>
+<span class="fc" id="L243">            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, &quot;File size must be less than &quot; + userPictureSize/1024 + &quot; KB.&quot;);</span>
+        }
+
+        // Check file content type
+<span class="fc" id="L247">        String contentType = file.getContentType();</span>
+<span class="fc bfc" id="L248" title="All 2 branches covered.">        if (!isAllowedContentType(contentType)) {</span>
+<span class="fc" id="L249">            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, &quot;File content type is not allowed&quot;);</span>
+        }
+
+        try {
+            // Create the directory if it doesn't exist
+<span class="fc" id="L254">            Path uploadPathVal = Paths.get(uploadPath);</span>
+<span class="fc bfc" id="L255" title="All 2 branches covered.">            if (!Files.exists(uploadPathVal)) {</span>
+<span class="fc" id="L256">                Files.createDirectories(uploadPathVal);</span>
+            }
+
+            // Save the file to the server
+<span class="fc" id="L260">            User user = getUserFromAuthentication();</span>
+<span class="fc" id="L261">            String fileName = &quot;user_&quot; + user.getId() + &quot;_&quot; + file.getOriginalFilename();</span>
+<span class="fc" id="L262">            Path filePath = uploadPathVal.resolve(fileName);</span>
+<span class="fc" id="L263">            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);</span>
+
+            // Update the user's picture in the database
+<span class="fc" id="L266">            String oldPictureName = user.getUserPicture();</span>
+<span class="fc bfc" id="L267" title="All 2 branches covered.">            if (!fileName.equals(oldPictureName)) {</span>
+<span class="fc" id="L268">                deleteUserPicture(oldPictureName);</span>
+            }
+<span class="fc" id="L270">            user.setUserPicture(fileName);</span>
+<span class="fc" id="L271">            userRepository.save(user);</span>
+<span class="fc" id="L272">            return fileName;</span>
+<span class="fc" id="L273">        } catch (IOException e) {</span>
+<span class="fc" id="L274">            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, &quot;Failed to upload file.&quot;, e);</span>
+        }
+    }
+
+    @Override
+    public Resource getUserPicture(String filename) {
+<span class="fc" id="L280">        Path filePath = Paths.get(uploadPath).resolve(filename);</span>
+<span class="fc bfc" id="L281" title="All 4 branches covered.">        if (Files.exists(filePath) &amp;&amp; Files.isReadable(filePath)) {</span>
+            try {
+<span class="fc" id="L283">                Resource resource = new UrlResource(filePath.toUri());</span>
+<span class="fc bfc" id="L284" title="All 2 branches covered.">                if (resource.exists()) return resource;</span>
+<span class="fc" id="L285">            } catch (MalformedURLException e) {</span>
+<span class="fc" id="L286">                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, &quot;Failed to create URL resource for file: &quot; + filename, e);</span>
+<span class="fc" id="L287">            }</span>
+        }
+<span class="fc" id="L289">        throw new ResponseStatusException(HttpStatus.NOT_FOUND, &quot;File not found.&quot;);</span>
+    }
+
+    void deleteUserPicture(String filename) {
+<span class="fc bfc" id="L293" title="All 4 branches covered.">        if (filename != null &amp;&amp; !filename.startsWith(&quot;http&quot;)) {</span>
+<span class="fc" id="L294">            Path filePath = Paths.get(uploadPath).resolve(filename);</span>
+<span class="fc bfc" id="L295" title="All 2 branches covered.">            if (Files.exists(filePath)) {</span>
+                try {
+<span class="fc" id="L297">                    Files.delete(filePath);</span>
+<span class="fc" id="L298">                } catch (IOException e) {</span>
+<span class="fc" id="L299">                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, &quot;Failed to delete file: &quot; + filename, e);</span>
+<span class="fc" id="L300">                }</span>
+            }
+        }
+<span class="fc" id="L303">    }</span>
+
+    private User getUserFromAuthentication() {
+<span class="fc" id="L306">        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();</span>
+<span class="fc" id="L307">        CustomUserDetails userDetail = (CustomUserDetails) authentication.getPrincipal();</span>
+<span class="fc" id="L308">        return userRepository.findById(userDetail.getUserId()).orElseThrow(() -&gt; new UsernameNotFoundException(&quot;User not found&quot;));</span>
+    }
+
+    User getUserWithoutIdPassword(User user) {
+<span class="fc" id="L312">        String pictureUri = user.getUserPicture();</span>
+<span class="fc bfc" id="L313" title="All 4 branches covered.">        if (pictureUri != null &amp;&amp; !pictureUri.startsWith(&quot;http&quot;)) {</span>
+            // add app context only if it is a local file (not a remote url or null)
+<span class="fc" id="L315">            pictureUri = ServletUriComponentsBuilder.fromCurrentContextPath().path(&quot;/user/picture/{pictureUrl}&quot;).</span>
+<span class="fc" id="L316">                    buildAndExpand(pictureUri).toUri().toString();</span>
+        }
+<span class="fc" id="L318">        return new User(null, null, user.getEmail(), user.getUserName(), pictureUri);</span>
+    }
+
+    void validateEmail(String email) {
+<span class="fc" id="L322">        String emailRegex = &quot;^((?!\\.)[\\w\\-_.]*[^.])(@\\w+)(\\.\\w+(\\.\\w+)?[^.\\W])$&quot;;</span>
+<span class="fc" id="L323">        Pattern pattern = Pattern.compile(emailRegex);</span>
+<span class="fc" id="L324">        Matcher matcher = pattern.matcher(email);</span>
+<span class="fc bfc" id="L325" title="All 2 branches covered.">        if (!matcher.matches()) throw new UsernameNotFoundException(&quot;User email invalid: &quot; + email);</span>
+<span class="fc bfc" id="L326" title="All 2 branches covered.">        if (userRepository.findByEmail(email).isPresent()) throw new EmailAlreadyExistException(email);</span>
+<span class="fc" id="L327">    }</span>
+
+    void validateUsername(String userName) {
+        // This example allows alphanumeric characters, underscores, and hyphens, with a length between 3 and 16 characters
+<span class="fc" id="L331">        String usernameRegex = &quot;^[a-zA-Z0-9_-]{3,16}$&quot;;</span>
+<span class="fc" id="L332">        Pattern pattern = Pattern.compile(usernameRegex);</span>
+<span class="fc" id="L333">        Matcher matcher = pattern.matcher(userName);</span>
+<span class="fc bfc" id="L334" title="All 2 branches covered.">        if (!matcher.matches()) throw new UsernameNotFoundException(&quot;User name invalid: &quot; + userName);</span>
+<span class="fc bfc" id="L335" title="All 2 branches covered.">        if (userRepository.findByUserName(userName).isPresent()) throw new UserAlreadyExistException(userName);</span>
+<span class="fc" id="L336">    }</span>
+
+    boolean isAllowedContentType(String contentType) {
+<span class="fc bfc" id="L339" title="All 2 branches covered.">        for (String allowedType : ALLOWED_CONTENT_TYPES) {</span>
+<span class="fc bfc" id="L340" title="All 2 branches covered.">            if (allowedType.equals(contentType)) {</span>
+<span class="fc" id="L341">                return true;</span>
+            }
+        }
+<span class="fc" id="L344">        return false;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

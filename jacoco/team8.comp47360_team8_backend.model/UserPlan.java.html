@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserPlan.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">COMP47360_Team8_Backend</a> &gt; <a href="index.source.html" class="el_package">team8.comp47360_team8_backend.model</a> &gt; <span class="el_source">UserPlan.java</span></div><h1>UserPlan.java</h1><pre class="source lang-java linenums">package team8.comp47360_team8_backend.model;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
+
+import java.time.ZonedDateTime;
+
+/**
+ * @Author : Ze Li
+ * @Date : 17/06/2025 17:06
+ * @Version : V1.0
+ * @Description :
+ */
+
+@Entity
+public class UserPlan {
+    @Id
+    @GeneratedValue
+    private Long userPlanId;
+
+    private String poiName;
+
+    @Column(nullable = false)
+    private ZonedDateTime time;
+
+    private String busyness;
+
+    @Column(nullable = false)
+    private double latitude;
+
+    @Column(nullable = false)
+    private double longitude;
+
+    private float userRating;
+
+    private String pictureUrl;
+
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
+    @JoinColumn(name = &quot;user_id&quot;, nullable = false, referencedColumnName = &quot;user_id&quot;)
+    @JsonIgnore
+    private User user;
+
+<span class="fc" id="L43">    public UserPlan() {</span>
+<span class="fc" id="L44">    }</span>
+
+<span class="fc" id="L46">    public UserPlan(String poiName, ZonedDateTime time, String busyness, double latitude, double longitude) {</span>
+<span class="fc" id="L47">        this.poiName = poiName;</span>
+<span class="fc" id="L48">        this.time = time;</span>
+<span class="fc" id="L49">        this.busyness = busyness;</span>
+<span class="fc" id="L50">        this.latitude = latitude;</span>
+<span class="fc" id="L51">        this.longitude = longitude;</span>
+<span class="fc" id="L52">    }</span>
+
+    public UserPlan(Long userPlanId, String poiName, ZonedDateTime time, String busyness, double latitude,
+<span class="fc" id="L55">            double longitude, User user) {</span>
+<span class="fc" id="L56">        this.userPlanId = userPlanId;</span>
+<span class="fc" id="L57">        this.poiName = poiName;</span>
+<span class="fc" id="L58">        this.time = time;</span>
+<span class="fc" id="L59">        this.busyness = busyness;</span>
+<span class="fc" id="L60">        this.latitude = latitude;</span>
+<span class="fc" id="L61">        this.longitude = longitude;</span>
+<span class="fc" id="L62">        this.user = user;</span>
+<span class="fc" id="L63">    }</span>
+
+<span class="fc" id="L65">    public UserPlan(Long userPlanId, String poiName, ZonedDateTime time, String busyness, double latitude, double longitude, float userRating, String pictureUrl, User user) {</span>
+<span class="fc" id="L66">        this.userPlanId = userPlanId;</span>
+<span class="fc" id="L67">        this.poiName = poiName;</span>
+<span class="fc" id="L68">        this.time = time;</span>
+<span class="fc" id="L69">        this.busyness = busyness;</span>
+<span class="fc" id="L70">        this.latitude = latitude;</span>
+<span class="fc" id="L71">        this.longitude = longitude;</span>
+<span class="fc" id="L72">        this.userRating = userRating;</span>
+<span class="fc" id="L73">        this.pictureUrl = pictureUrl;</span>
+<span class="fc" id="L74">        this.user = user;</span>
+<span class="fc" id="L75">    }</span>
+
+    public float getUserRating() {
+<span class="fc" id="L78">        return userRating;</span>
+    }
+
+    public void setUserRating(float userRating) {
+<span class="fc" id="L82">        this.userRating = userRating;</span>
+<span class="fc" id="L83">    }</span>
+
+    public String getPictureUrl() {
+<span class="fc" id="L86">        return pictureUrl;</span>
+    }
+
+    public void setPictureUrl(String pictureUrl) {
+<span class="fc" id="L90">        this.pictureUrl = pictureUrl;</span>
+<span class="fc" id="L91">    }</span>
+
+    public Long getUserPlanId() {
+<span class="fc" id="L94">        return userPlanId;</span>
+    }
+
+    public void setUserPlanId(Long userPlanId) {
+<span class="fc" id="L98">        this.userPlanId = userPlanId;</span>
+<span class="fc" id="L99">    }</span>
+
+    public String getPoiName() {
+<span class="fc" id="L102">        return poiName;</span>
+    }
+
+    public void setPoiName(String poiName) {
+<span class="fc" id="L106">        this.poiName = poiName;</span>
+<span class="fc" id="L107">    }</span>
+
+    public ZonedDateTime getTime() {
+<span class="fc" id="L110">        return time;</span>
+    }
+
+    public void setTime(ZonedDateTime time) {
+<span class="fc" id="L114">        this.time = time;</span>
+<span class="fc" id="L115">    }</span>
+
+    public String getBusyness() {
+<span class="fc" id="L118">        return busyness;</span>
+    }
+
+    public void setBusyness(String busyness) {
+<span class="fc" id="L122">        this.busyness = busyness;</span>
+<span class="fc" id="L123">    }</span>
+
+    public double getLatitude() {
+<span class="fc" id="L126">        return latitude;</span>
+    }
+
+    public void setLatitude(double latitude) {
+<span class="fc" id="L130">        this.latitude = latitude;</span>
+<span class="fc" id="L131">    }</span>
+
+    public double getLongitude() {
+<span class="fc" id="L134">        return longitude;</span>
+    }
+
+    public void setLongitude(double longitude) {
+<span class="fc" id="L138">        this.longitude = longitude;</span>
+<span class="fc" id="L139">    }</span>
+
+    public User getUser() {
+<span class="fc" id="L142">        return user;</span>
+    }
+
+    public void setUser(User user) {
+<span class="fc" id="L146">        this.user = user;</span>
+<span class="fc" id="L147">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

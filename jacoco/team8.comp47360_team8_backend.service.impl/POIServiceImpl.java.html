@@ -1,0 +1,504 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>POIServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">COMP47360_Team8_Backend</a> &gt; <a href="index.source.html" class="el_package">team8.comp47360_team8_backend.service.impl</a> &gt; <span class="el_source">POIServiceImpl.java</span></div><h1>POIServiceImpl.java</h1><pre class="source lang-java linenums">package team8.comp47360_team8_backend.service.impl;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+import team8.comp47360_team8_backend.dto.POIBusynessDistanceRecommendationDTO;
+import team8.comp47360_team8_backend.dto.RecommendationInputDTO;
+import team8.comp47360_team8_backend.exception.POITypeNotFoundException;
+import team8.comp47360_team8_backend.model.POI;
+import team8.comp47360_team8_backend.model.POIType;
+import team8.comp47360_team8_backend.model.UserPlan;
+import team8.comp47360_team8_backend.repository.POITypeRepository;
+import team8.comp47360_team8_backend.service.POIService;
+import team8.comp47360_team8_backend.service.ZoneService;
+
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.util.*;
+
+/**
+ * @Author : Ze Li
+ * @Date : 02/06/2025 22:06
+ * @Version : V1.0
+ * @Description :
+ */
+
+@Service
+<span class="fc" id="L29">public class POIServiceImpl implements POIService {</span>
+    @Autowired
+    private POITypeRepository poiTypeRepository;
+    @Autowired
+    private ZoneService zoneService;
+
+    // Adjust busyness levels to numeric values
+<span class="fc" id="L36">    public static final Map&lt;String, Integer&gt; BUSYNESS_MAP = Map.of(</span>
+<span class="fc" id="L37">            &quot;low&quot;, 10,</span>
+<span class="fc" id="L38">            &quot;medium&quot;, 5,</span>
+<span class="fc" id="L39">            &quot;high&quot;, 1</span>
+    );
+    public static final double CLOSEST_DISTANCE_SCORE = 10;
+
+    private class TimeGap {
+        private int startIndex;
+        private int endIndex;
+        private long minutes;
+
+<span class="fc" id="L48">        public TimeGap(int startIndex, int endIndex, long minutes) {</span>
+<span class="fc" id="L49">            this.startIndex = startIndex;</span>
+<span class="fc" id="L50">            this.endIndex = endIndex;</span>
+<span class="fc" id="L51">            this.minutes = minutes;</span>
+<span class="fc" id="L52">        }</span>
+
+        public int getEndIndex() {
+<span class="fc" id="L55">            return endIndex;</span>
+        }
+
+        public int getStartIndex() {
+<span class="fc" id="L59">            return startIndex;</span>
+        }
+
+        public long getMinutes() {
+<span class="fc" id="L63">            return minutes;</span>
+        }
+    }
+
+    @Override
+    public Set&lt;POI&gt; getPOIsByPOITypeName(String poiTypeName) {
+<span class="fc" id="L69">        POIType poiType = poiTypeRepository.getByPoiTypeName(poiTypeName).orElseThrow(() -&gt; new POITypeNotFoundException(poiTypeName));</span>
+<span class="fc" id="L70">        return poiType.getPOIs();</span>
+    }
+
+    @Override
+    public List&lt;POIBusynessDistanceRecommendationDTO&gt; assignBusynessDistanceForPOIs(String poiTypeName, POI lastPOI, HashMap&lt;Long, String&gt; zoneBusynessMap, String transitType, int limit) {
+<span class="fc" id="L75">        Set&lt;POI&gt; pois = getPOIsByPOITypeName(poiTypeName);</span>
+<span class="fc" id="L76">        PriorityQueue&lt;POIBusynessDistanceRecommendationDTO&gt; poiBusynessDistanceRecommendationDTOHeap =</span>
+<span class="fc" id="L77">                new PriorityQueue&lt;&gt;(limit, Comparator.comparingDouble(POIBusynessDistanceRecommendationDTO::getRecommendation));</span>
+
+        // distance = 1, math.exp(-1/2)=0.61
+        final double distanceScoreDecayFactor;
+<span class="fc bfc" id="L81" title="All 2 branches covered.">        if (transitType == null) {</span>
+<span class="fc" id="L82">            distanceScoreDecayFactor = 2;</span>
+<span class="fc bfc" id="L83" title="All 4 branches covered.">        } else if (transitType.equals(&quot;cycle&quot;) || transitType.equals(&quot;bus&quot;)) {</span>
+<span class="fc" id="L84">            distanceScoreDecayFactor = 4;</span>
+<span class="fc bfc" id="L85" title="All 2 branches covered.">        } else if (transitType.equals(&quot;car&quot;)) {</span>
+<span class="fc" id="L86">            distanceScoreDecayFactor = 8;</span>
+        } else {
+            // walk as default
+<span class="fc" id="L89">            distanceScoreDecayFactor = 2;</span>
+        }
+
+<span class="fc bfc" id="L92" title="All 2 branches covered.">        for (POI poi : pois) {</span>
+<span class="fc" id="L93">            String busyness = zoneBusynessMap.get(poi.getZone().getZoneId());</span>
+<span class="fc" id="L94">            double distance = calculateDistance(lastPOI, poi);</span>
+<span class="fc" id="L95">            POIBusynessDistanceRecommendationDTO poiBusynessDistanceRecommendationDTO = new POIBusynessDistanceRecommendationDTO(poi, busyness, distance, calculateRecommendation(busyness, distance, distanceScoreDecayFactor));</span>
+<span class="fc" id="L96">            poiBusynessDistanceRecommendationDTOHeap.add(poiBusynessDistanceRecommendationDTO);</span>
+<span class="fc bfc" id="L97" title="All 2 branches covered.">            if (poiBusynessDistanceRecommendationDTOHeap.size() &gt; limit) {</span>
+                // remove the lowest recommendation
+<span class="fc" id="L99">                poiBusynessDistanceRecommendationDTOHeap.poll();</span>
+            }
+<span class="fc" id="L101">        }</span>
+
+<span class="fc" id="L103">        List&lt;POIBusynessDistanceRecommendationDTO&gt; result = new ArrayList&lt;&gt;(limit);</span>
+<span class="fc bfc" id="L104" title="All 2 branches covered.">        while (!poiBusynessDistanceRecommendationDTOHeap.isEmpty()) {</span>
+<span class="fc" id="L105">            result.add(poiBusynessDistanceRecommendationDTOHeap.poll());</span>
+        }
+<span class="fc" id="L107">        Collections.reverse(result);</span>
+<span class="fc" id="L108">        return result;</span>
+    }
+
+    private boolean isFixedPoi(RecommendationInputDTO recommendationInputDTO) {
+<span class="fc bfc" id="L112" title="All 4 branches covered.">        return recommendationInputDTO.getPoiName() != null &amp;&amp; recommendationInputDTO.getZoneId() != null</span>
+<span class="fc bfc" id="L113" title="All 4 branches covered.">                &amp;&amp; recommendationInputDTO.getLatitude() != null &amp;&amp; recommendationInputDTO.getLongitude() != null;</span>
+    }
+
+    int getIndexByBinarySearch(List&lt;TimeGap&gt; gaps, TimeGap newGap, Comparator&lt;TimeGap&gt; gapComparator) {
+<span class="fc" id="L117">        int index = Collections.binarySearch(gaps, newGap, gapComparator);</span>
+<span class="fc bfc" id="L118" title="All 2 branches covered.">        if (index &lt; 0) {</span>
+<span class="fc" id="L119">            index = -index - 1;</span>
+        }
+<span class="fc" id="L121">        return index;</span>
+    }
+
+    @Override
+    public List&lt;UserPlan&gt; getListOfRecommendations(List&lt;RecommendationInputDTO&gt; recommendationInputDTOS) {
+<span class="fc bfc" id="L126" title="All 2 branches covered.">        if (recommendationInputDTOS.size() &lt;= 1) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, &quot;No recommendation input&quot;);</span>
+<span class="fc bfc" id="L127" title="All 4 branches covered.">        if (!isFixedPoi(recommendationInputDTOS.get(0)) || recommendationInputDTOS.get(0).getTime() == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, &quot;Start location is not valid&quot;);</span>
+
+        final int minutesPerKilometer;
+<span class="fc" id="L130">        String transitType = recommendationInputDTOS.get(0).getTransitType();</span>
+<span class="fc bfc" id="L131" title="All 2 branches covered.">        if (transitType == null) {</span>
+<span class="fc" id="L132">            minutesPerKilometer = 12;</span>
+<span class="fc bfc" id="L133" title="All 4 branches covered.">        } else if (transitType.equals(&quot;cycle&quot;) || transitType.equals(&quot;bus&quot;)) {</span>
+<span class="fc" id="L134">            minutesPerKilometer = 6;</span>
+<span class="fc bfc" id="L135" title="All 2 branches covered.">        } else if (transitType.equals(&quot;car&quot;)) {</span>
+<span class="fc" id="L136">            minutesPerKilometer = 3;</span>
+        } else {
+            // walk as default
+<span class="fc" id="L139">            minutesPerKilometer = 12;</span>
+        }
+
+<span class="fc" id="L142">        List&lt;RecommendationInputDTO&gt; fixedPoiFixedTime = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L143">        List&lt;RecommendationInputDTO&gt; fixedPoiOnly      = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L144">        List&lt;RecommendationInputDTO&gt; fixedTimeOnly     = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L145">        List&lt;RecommendationInputDTO&gt; fullyFlexible     = new ArrayList&lt;&gt;();</span>
+
+        // Classify the entries
+<span class="fc bfc" id="L148" title="All 2 branches covered.">        for (RecommendationInputDTO e : recommendationInputDTOS) {</span>
+<span class="fc" id="L149">            boolean hasPoi = isFixedPoi(e);</span>
+<span class="fc bfc" id="L150" title="All 2 branches covered.">            boolean hasTime = e.getTime() != null;</span>
+<span class="fc bfc" id="L151" title="All 2 branches covered.">            if (e.getStayMinutes() == null) e.setStayMinutes(15);</span>
+
+<span class="fc bfc" id="L153" title="All 4 branches covered.">            if (hasPoi &amp;&amp; hasTime) fixedPoiFixedTime.add(e);</span>
+<span class="fc bfc" id="L154" title="All 2 branches covered.">            else if (hasPoi) fixedPoiOnly.add(e);</span>
+<span class="fc bfc" id="L155" title="All 2 branches covered.">            else if (e.getPoiTypeName() == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, &quot;POI type name is not valid for unfixed POI&quot;);</span>
+<span class="fc bfc" id="L156" title="All 2 branches covered.">            else if (hasTime) fixedTimeOnly.add(e);</span>
+<span class="fc" id="L157">            else fullyFlexible.add(e);</span>
+<span class="fc" id="L158">        }</span>
+<span class="fc" id="L159">        ArrayList&lt;UserPlan&gt; userPlans = new ArrayList&lt;&gt;(recommendationInputDTOS.size());</span>
+
+        // Build your anchors list as DTOs, not PlanEntry
+<span class="fc" id="L162">        List&lt;RecommendationInputDTO&gt; anchors = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L163">        anchors.addAll(fixedPoiFixedTime);</span>
+<span class="fc" id="L164">        anchors.addAll(fixedTimeOnly);</span>
+
+        // Sort by the DTO’s time
+<span class="fc" id="L167">        anchors.sort(Comparator.comparing(RecommendationInputDTO::getTime));</span>
+
+        // Handle ending location
+<span class="fc" id="L170">        ZonedDateTime lastAnchorTime = anchors.get(anchors.size() - 1).getTime();</span>
+<span class="fc" id="L171">        ZonedDateTime endTime = lastAnchorTime.withHour(21).withMinute(0).withSecond(0).withNano(0);</span>
+<span class="fc bfc" id="L172" title="All 2 branches covered.">        if (lastAnchorTime.isAfter(endTime)) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, &quot;End location time is not valid, only support before 21:00&quot;);</span>
+        // add default ending time if not specified
+<span class="fc bfc" id="L174" title="All 2 branches covered.">        if (recommendationInputDTOS.get(recommendationInputDTOS.size() - 1).getTime() == null) {</span>
+<span class="fc" id="L175">            anchors.add(new RecommendationInputDTO(null, null, null, null, endTime, null, null, null));</span>
+        }
+
+        // compute busyness for fixed POIs with fixed time
+<span class="fc" id="L179">        Map&lt;RecommendationInputDTO, String&gt; busynessForAnchor = new HashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L180" title="All 2 branches covered.">        for (RecommendationInputDTO anchor : anchors) {</span>
+<span class="fc bfc" id="L181" title="All 2 branches covered.">            if (isFixedPoi(anchor)) {</span>
+<span class="fc" id="L182">                String busy = zoneService</span>
+<span class="fc" id="L183">                        .predictZoneBusyness(</span>
+<span class="fc" id="L184">                                Collections.singletonList(anchor.getTime()),</span>
+<span class="fc" id="L185">                                anchor.getZoneId())</span>
+<span class="fc" id="L186">                        .get(0);</span>
+<span class="fc" id="L187">                busynessForAnchor.put(anchor, busy);</span>
+            }
+<span class="fc" id="L189">        }</span>
+
+        // build gaps (using departure)
+<span class="fc" id="L192">        List&lt;TimeGap&gt; gaps = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L193" title="All 2 branches covered.">        for (int i = 1; i &lt; anchors.size(); i++) {</span>
+<span class="fc" id="L194">            RecommendationInputDTO prev = anchors.get(i - 1);</span>
+<span class="fc" id="L195">            RecommendationInputDTO next = anchors.get(i);</span>
+<span class="fc" id="L196">            ZonedDateTime departPrev = prev.getTime().plusMinutes(prev.getStayMinutes());</span>
+<span class="fc" id="L197">            long gapMin = Duration.between(departPrev, next.getTime()).toMinutes();</span>
+<span class="fc" id="L198">            gaps.add(new TimeGap(i-1, i, gapMin));</span>
+        }
+
+        // compute busyness for fixed Time only POIs
+<span class="fc bfc" id="L202" title="All 2 branches covered.">        for (int i = 1; i &lt; anchors.size() - 1; i++) {</span>
+<span class="fc" id="L203">            RecommendationInputDTO anchor = anchors.get(i);</span>
+            // only fill slots that need recommendation
+<span class="fc bfc" id="L205" title="All 2 branches covered.">            if (!isFixedPoi(anchor)) {</span>
+                // neighbors
+<span class="fc" id="L207">                RecommendationInputDTO prev = anchors.get(i - 1);</span>
+<span class="fc" id="L208">                RecommendationInputDTO next = anchors.get(i + 1);</span>
+
+                // decide which anchor to use as context (lastPOI)
+<span class="fc" id="L211">                POI lastPOIEntity = new POI();</span>
+<span class="fc bfc" id="L212" title="All 4 branches covered.">                if (!isFixedPoi(next) || gaps.get(i - 1).getMinutes() &lt; gaps.get(i).getMinutes()) {</span>
+<span class="fc" id="L213">                    lastPOIEntity.setLatitude(prev.getLatitude());</span>
+<span class="fc" id="L214">                    lastPOIEntity.setLongitude(prev.getLongitude());</span>
+                } else {
+<span class="fc" id="L216">                    lastPOIEntity.setLatitude(next.getLatitude());</span>
+<span class="fc" id="L217">                    lastPOIEntity.setLongitude(next.getLongitude());</span>
+                }
+
+                // 1) pick up the busyness map for this anchor’s time
+<span class="fc" id="L221">                HashMap&lt;Long,String&gt; zoneBusynessMap</span>
+<span class="fc" id="L222">                        = zoneService.predictZoneBusyness(anchor.getTime());</span>
+
+                // use the single top result to fill the anchor
+<span class="fc" id="L225">                POIBusynessDistanceRecommendationDTO best =</span>
+<span class="fc" id="L226">                        assignBusynessDistanceForPOIs(</span>
+<span class="fc" id="L227">                                anchor.getPoiTypeName(),</span>
+                                lastPOIEntity,
+                                zoneBusynessMap,
+                                transitType,    // transitType
+                                1        // limit
+<span class="fc" id="L232">                        ).get(0);</span>
+
+<span class="fc" id="L234">                POI chosen = best.getPoi();</span>
+<span class="fc" id="L235">                anchor.setPoiName(chosen.getPoiName());</span>
+<span class="fc" id="L236">                anchor.setLatitude(chosen.getLatitude());</span>
+<span class="fc" id="L237">                anchor.setLongitude(chosen.getLongitude());</span>
+<span class="fc" id="L238">                anchor.setZoneId(chosen.getZone().getZoneId());</span>
+<span class="fc" id="L239">                busynessForAnchor.put(anchor, best.getBusyness());</span>
+            }
+        }
+
+        // end location has fixed time but unfixed location
+<span class="fc" id="L244">        RecommendationInputDTO end = anchors.get(anchors.size() - 1);</span>
+<span class="fc bfc" id="L245" title="All 4 branches covered.">        if (!isFixedPoi(end) &amp;&amp; end.getPoiTypeName() != null) {</span>
+<span class="fc" id="L246">            RecommendationInputDTO secondEnd = anchors.get(anchors.size() - 2);</span>
+<span class="fc" id="L247">            HashMap&lt;Long,String&gt; zoneBusynessMap</span>
+<span class="fc" id="L248">                    = zoneService.predictZoneBusyness(end.getTime());</span>
+            // use the single top result to fill the anchor
+<span class="fc" id="L250">            POIBusynessDistanceRecommendationDTO best =</span>
+<span class="fc" id="L251">                    assignBusynessDistanceForPOIs(</span>
+<span class="fc" id="L252">                            end.getPoiTypeName(),</span>
+<span class="fc" id="L253">                            new POI(secondEnd.getLatitude(), secondEnd.getLongitude()),</span>
+                            zoneBusynessMap,
+                            transitType,    // transitType
+                            1        // limit
+<span class="fc" id="L257">                    ).get(0);</span>
+<span class="fc" id="L258">            end.setPoiName(best.getPoi().getPoiName());</span>
+<span class="fc" id="L259">            end.setLatitude(best.getPoi().getLatitude());</span>
+<span class="fc" id="L260">            end.setLongitude(best.getPoi().getLongitude());</span>
+<span class="fc" id="L261">            end.setZoneId(best.getPoi().getZone().getZoneId());</span>
+<span class="fc" id="L262">            busynessForAnchor.put(end, best.getBusyness());</span>
+        }
+
+        // sort gaps
+<span class="fc" id="L266">        Comparator&lt;TimeGap&gt; gapComparator = (a, b) -&gt;</span>
+<span class="fc" id="L267">                Long.compare(b.getMinutes(), a.getMinutes());</span>
+<span class="fc" id="L268">        gaps.sort(gapComparator);  // largest first</span>
+        // 2) insert each fixed-POI-only into the biggest feasible gap
+<span class="fc bfc" id="L270" title="All 2 branches covered.">        for (RecommendationInputDTO poiOnly : fixedPoiOnly) {</span>
+<span class="fc" id="L271">            boolean placed = false;</span>
+            // compute a POI stub for distance calculations
+<span class="fc" id="L273">            POI thisPoi = new POI(poiOnly.getLatitude(), poiOnly.getLongitude());</span>
+
+            // already sorted gaps
+<span class="fc bfc" id="L276" title="All 2 branches covered.">            for (int i = 0; i &lt; gaps.size(); i++) {</span>
+<span class="fc" id="L277">                TimeGap gap = gaps.get(i);</span>
+<span class="fc" id="L278">                int startIndex = gap.getStartIndex();</span>
+<span class="fc" id="L279">                int endIndex = gap.getEndIndex(); // the index of the end anchor of the gap</span>
+<span class="fc" id="L280">                RecommendationInputDTO prev = anchors.get(startIndex);</span>
+<span class="fc" id="L281">                RecommendationInputDTO next = anchors.get(endIndex);</span>
+
+                // 2a) distance‐based travel times
+<span class="fc" id="L284">                double distPrevKm = calculateDistance(</span>
+<span class="fc" id="L285">                        new POI(prev.getLatitude(), prev.getLongitude()),</span>
+                        thisPoi
+                );
+                // next anchor could be added fake POI with 21:00, so distance set to 0
+<span class="fc bfc" id="L289" title="All 2 branches covered.">                double distNextKm = !isFixedPoi(next) ? 0 : calculateDistance(</span>
+                        thisPoi,
+<span class="fc" id="L291">                        new POI(next.getLatitude(), next.getLongitude())</span>
+                );
+<span class="fc" id="L293">                double preTravelTime = distPrevKm * minutesPerKilometer;</span>
+<span class="fc" id="L294">                double travelMin = preTravelTime + distNextKm * minutesPerKilometer + poiOnly.getStayMinutes();</span>
+
+                // 2b) can we fit?
+<span class="fc bfc" id="L297" title="All 2 branches covered.">                if (travelMin &lt;= gap.minutes) {</span>
+<span class="fc" id="L298">                    ZonedDateTime mid = prev.getTime().plusMinutes((long) (prev.getStayMinutes() + preTravelTime + (gap.getMinutes() - travelMin) / 2));</span>
+<span class="fc" id="L299">                    poiOnly.setTime(mid);</span>
+
+                    // 3) compute its busyness and store it
+<span class="fc" id="L302">                    String busy = zoneService</span>
+<span class="fc" id="L303">                            .predictZoneBusyness(</span>
+<span class="fc" id="L304">                                    Collections.singletonList(poiOnly.getTime()),</span>
+<span class="fc" id="L305">                                    poiOnly.getZoneId()</span>
+                            )
+<span class="fc" id="L307">                            .get(0);</span>
+<span class="fc" id="L308">                    busynessForAnchor.put(poiOnly, busy);</span>
+
+<span class="fc" id="L310">                    anchors.add(poiOnly);</span>
+<span class="fc" id="L311">                    gaps.remove(i);</span>
+<span class="fc" id="L312">                    TimeGap newGap = new TimeGap(startIndex, anchors.size()-1, Duration.between(prev.getTime().plusMinutes(prev.getStayMinutes()), poiOnly.getTime()).toMinutes());</span>
+<span class="fc" id="L313">                    int index = getIndexByBinarySearch(gaps, newGap, gapComparator);</span>
+<span class="fc" id="L314">                    gaps.add(index, newGap);</span>
+
+<span class="fc" id="L316">                    TimeGap newGap2 = new TimeGap(anchors.size()-1, endIndex, Duration.between(poiOnly.getTime().plusMinutes(poiOnly.getStayMinutes()), next.getTime()).toMinutes());</span>
+<span class="fc" id="L317">                    index = getIndexByBinarySearch(gaps, newGap2, gapComparator);</span>
+<span class="fc" id="L318">                    gaps.add(index, newGap2);</span>
+<span class="fc" id="L319">                    placed = true;</span>
+<span class="fc" id="L320">                    break;</span>
+                }
+            }
+            // 2c) fallback: if none of the gaps could fit it, stick it in the very largest gap at its midpoint
+<span class="fc bfc" id="L324" title="All 2 branches covered.">            if (!placed) {</span>
+                // the largest gap is at index 0
+<span class="fc" id="L326">                TimeGap lg = gaps.get(0);</span>
+<span class="fc" id="L327">                int startIndex = lg.getStartIndex();</span>
+<span class="fc" id="L328">                int endIndex = lg.getEndIndex();</span>
+
+<span class="fc" id="L330">                RecommendationInputDTO prev = anchors.get(startIndex);</span>
+
+                // midpoint between departPrev and arriveNext
+<span class="fc" id="L333">                ZonedDateTime mid = prev.getTime().plusMinutes(prev.getStayMinutes()).plusMinutes(lg.getMinutes() / 2);</span>
+                // assign that fallback time
+<span class="fc" id="L335">                poiOnly.setTime(mid);</span>
+                // compute its busyness too
+<span class="fc" id="L337">                String busy = zoneService</span>
+<span class="fc" id="L338">                        .predictZoneBusyness(</span>
+<span class="fc" id="L339">                                Collections.singletonList(poiOnly.getTime()),</span>
+<span class="fc" id="L340">                                poiOnly.getZoneId()</span>
+                        )
+<span class="fc" id="L342">                        .get(0);</span>
+<span class="fc" id="L343">                busynessForAnchor.put(poiOnly, busy);</span>
+
+                // finally insert it into your anchors list
+<span class="fc" id="L346">                anchors.add(poiOnly);</span>
+<span class="fc" id="L347">                gaps.remove(0);</span>
+<span class="fc" id="L348">                TimeGap newGap = new TimeGap(startIndex, anchors.size()-1, 0);</span>
+<span class="fc" id="L349">                int index = getIndexByBinarySearch(gaps, newGap, gapComparator);</span>
+<span class="fc" id="L350">                gaps.add(index, newGap);</span>
+
+<span class="fc" id="L352">                TimeGap newGap2 = new TimeGap(anchors.size()-1, endIndex, 0);</span>
+<span class="fc" id="L353">                index = getIndexByBinarySearch(gaps, newGap2, gapComparator);</span>
+<span class="fc" id="L354">                gaps.add(index, newGap2);</span>
+            }
+<span class="fc" id="L356">        }</span>
+
+        // 3) place each fully-flexible entry
+<span class="fc bfc" id="L359" title="All 2 branches covered.">        for (RecommendationInputDTO flex : fullyFlexible) {</span>
+<span class="fc" id="L360">            boolean placed = false;</span>
+
+            // try each of the two largest gaps
+<span class="fc bfc" id="L363" title="All 2 branches covered.">            for (int i = 0; i &lt; 2; i++) {</span>
+<span class="fc" id="L364">                TimeGap lg = gaps.get(i);</span>
+<span class="fc" id="L365">                int startIndex = lg.getStartIndex();</span>
+<span class="fc" id="L366">                int endIndex = lg.getEndIndex();</span>
+<span class="fc" id="L367">                RecommendationInputDTO prev = anchors.get(startIndex);</span>
+<span class="fc" id="L368">                RecommendationInputDTO next = anchors.get(endIndex);</span>
+
+                // build context POI from prev
+<span class="fc" id="L371">                POI lastPOI = new POI(prev.getLatitude(), prev.getLongitude());</span>
+
+                // get a big candidate list
+<span class="fc" id="L374">                ZonedDateTime mid = prev.getTime().plusMinutes(prev.getStayMinutes()).plusMinutes(lg.getMinutes() / 2);</span>
+<span class="fc" id="L375">                HashMap&lt;Long,String&gt; zoneMap =</span>
+<span class="fc" id="L376">                        zoneService.predictZoneBusyness(mid);</span>
+<span class="fc" id="L377">                List&lt;POIBusynessDistanceRecommendationDTO&gt; candidates =</span>
+<span class="fc" id="L378">                        assignBusynessDistanceForPOIs(</span>
+<span class="fc" id="L379">                                flex.getPoiTypeName(),</span>
+                                lastPOI,
+                                zoneMap,
+                                transitType,
+                                100
+                        );
+
+                // total gap in minutes
+<span class="fc" id="L387">                long gapMin = lg.getMinutes();</span>
+<span class="fc" id="L388">                double halfGapMin = gapMin / 2.0;</span>
+                // next anchor could be added fake POI with 21:00, so distance set to 0
+<span class="fc bfc" id="L390" title="All 2 branches covered.">                POI nextPOI = !isFixedPoi(next) ? null : new POI(next.getLatitude(), next.getLongitude());</span>
+                // scan candidates until one fits
+<span class="fc bfc" id="L392" title="All 2 branches covered.">                for (var cand : candidates) {</span>
+<span class="fc" id="L393">                    POI cPoi = cand.getPoi();</span>
+                    // travel minutes A→Z and Z→B
+<span class="fc" id="L395">                    double tAZ = calculateDistance(lastPOI, cPoi) * minutesPerKilometer;</span>
+<span class="fc bfc" id="L396" title="All 2 branches covered.">                    double tZB = nextPOI == null ? 0 : calculateDistance(cPoi, nextPOI) * minutesPerKilometer;</span>
+
+                    // include the stay at Z
+<span class="fc" id="L399">                    int stayMin = flex.getStayMinutes();</span>
+<span class="fc" id="L400">                    double requiredMin = tAZ + stayMin + tZB;</span>
+
+                    // must fit in the gap
+<span class="fc bfc" id="L403" title="All 2 branches covered.">                    if (requiredMin &lt;= gapMin) {</span>
+<span class="fc" id="L404">                        mid = prev.getTime().plusMinutes((long) (prev.getStayMinutes() + tAZ + (gapMin-requiredMin)/2));</span>
+                        // now fill flex
+<span class="fc" id="L406">                        flex.setPoiName(cPoi.getPoiName());</span>
+<span class="fc" id="L407">                        flex.setLatitude(cPoi.getLatitude());</span>
+<span class="fc" id="L408">                        flex.setLongitude(cPoi.getLongitude());</span>
+<span class="fc" id="L409">                        flex.setZoneId(cPoi.getZone().getZoneId());</span>
+<span class="fc" id="L410">                        flex.setTime(mid);</span>
+<span class="fc" id="L411">                        busynessForAnchor.put(flex, cand.getBusyness());</span>
+
+                        // insert and mark placed
+<span class="fc" id="L414">                        anchors.add(flex);</span>
+<span class="fc" id="L415">                        gaps.remove(i);</span>
+<span class="fc" id="L416">                        TimeGap newGap = new TimeGap(startIndex, anchors.size()-1, Duration.between(prev.getTime().plusMinutes(prev.getStayMinutes()), flex.getTime()).toMinutes());</span>
+<span class="fc" id="L417">                        int index = getIndexByBinarySearch(gaps, newGap, gapComparator);</span>
+<span class="fc" id="L418">                        gaps.add(index, newGap);</span>
+
+<span class="fc" id="L420">                        TimeGap newGap2 = new TimeGap(anchors.size()-1, endIndex, Duration.between(flex.getTime().plusMinutes(flex.getStayMinutes()), next.getTime()).toMinutes());</span>
+<span class="fc" id="L421">                        index = getIndexByBinarySearch(gaps, newGap2, gapComparator);</span>
+<span class="fc" id="L422">                        gaps.add(index, newGap2);</span>
+<span class="fc" id="L423">                        placed = true;</span>
+<span class="fc" id="L424">                        break;</span>
+                    }
+<span class="fc" id="L426">                }</span>
+<span class="fc bfc" id="L427" title="All 2 branches covered.">                if (placed) break;</span>
+            }
+            // if still not placed, fall back to midpoint of largest gap
+<span class="fc bfc" id="L430" title="All 2 branches covered.">            if (!placed) {</span>
+<span class="fc" id="L431">                TimeGap lg = gaps.get(0);</span>
+<span class="fc" id="L432">                int startIndex = lg.getStartIndex();</span>
+<span class="fc" id="L433">                int endIndex = lg.getEndIndex();</span>
+<span class="fc" id="L434">                RecommendationInputDTO prev = anchors.get(startIndex);</span>
+
+<span class="fc" id="L436">                ZonedDateTime mid = prev.getTime().plusMinutes(prev.getStayMinutes() + (lg.getMinutes()) / 2);</span>
+
+                // pick top-1 candidate now
+<span class="fc" id="L439">                POI lastPOI = new POI(prev.getLatitude(), prev.getLongitude());</span>
+<span class="fc" id="L440">                var best = assignBusynessDistanceForPOIs(</span>
+<span class="fc" id="L441">                        flex.getPoiTypeName(),</span>
+                        lastPOI,
+<span class="fc" id="L443">                        zoneService.predictZoneBusyness(mid),</span>
+                        transitType,
+                        1
+<span class="fc" id="L446">                ).get(0);</span>
+<span class="fc" id="L447">                POI cPoi = best.getPoi();</span>
+<span class="fc" id="L448">                flex.setPoiName(cPoi.getPoiName());</span>
+<span class="fc" id="L449">                flex.setLatitude(cPoi.getLatitude());</span>
+<span class="fc" id="L450">                flex.setLongitude(cPoi.getLongitude());</span>
+<span class="fc" id="L451">                flex.setZoneId(cPoi.getZone().getZoneId());</span>
+<span class="fc" id="L452">                flex.setTime(mid);</span>
+<span class="fc" id="L453">                busynessForAnchor.put(flex, best.getBusyness());</span>
+
+<span class="fc" id="L455">                anchors.add(flex);</span>
+<span class="fc" id="L456">                gaps.remove(0);</span>
+<span class="fc" id="L457">                TimeGap newGap = new TimeGap(startIndex, anchors.size()-1, 0);</span>
+<span class="fc" id="L458">                int index = getIndexByBinarySearch(gaps, newGap, gapComparator);</span>
+<span class="fc" id="L459">                gaps.add(index, newGap);</span>
+
+<span class="fc" id="L461">                TimeGap newGap2 = new TimeGap(anchors.size()-1, endIndex, 0);</span>
+<span class="fc" id="L462">                index = getIndexByBinarySearch(gaps, newGap2, gapComparator);</span>
+<span class="fc" id="L463">                gaps.add(index, newGap2);</span>
+            }
+<span class="fc" id="L465">        }</span>
+
+<span class="fc" id="L467">        anchors.sort(Comparator.comparing(RecommendationInputDTO::getTime));</span>
+<span class="fc bfc" id="L468" title="All 2 branches covered.">        for (RecommendationInputDTO dto : anchors) {</span>
+<span class="fc bfc" id="L469" title="All 2 branches covered.">            if (!isFixedPoi(dto)) continue;</span>
+<span class="fc" id="L470">            UserPlan plan = new UserPlan();</span>
+<span class="fc" id="L471">            plan.setPoiName(dto.getPoiName());</span>
+<span class="fc" id="L472">            plan.setTime(dto.getTime());</span>
+<span class="fc" id="L473">            plan.setBusyness(busynessForAnchor.get(dto));</span>
+<span class="fc" id="L474">            plan.setLatitude(dto.getLatitude());</span>
+<span class="fc" id="L475">            plan.setLongitude(dto.getLongitude());</span>
+<span class="fc" id="L476">            userPlans.add(plan);</span>
+<span class="fc" id="L477">        }</span>
+<span class="fc" id="L478">        return userPlans;</span>
+    }
+
+
+    public double calculateRecommendation(String busyness, double distance, double distanceScoreDecayFactor) {
+<span class="fc" id="L483">        double busynessScore = BUSYNESS_MAP.get(busyness);</span>
+        // Exponential decay formula for distanceScore
+<span class="fc" id="L485">        double distanceScore = CLOSEST_DISTANCE_SCORE * Math.exp(-distance / distanceScoreDecayFactor);</span>
+<span class="fc" id="L486">        return busynessScore/2 + distanceScore/2;</span>
+    }
+
+    public double calculateDistance(POI poi1, POI poi2) {
+        // Radius of the Earth in kilometers
+<span class="fc" id="L491">        final double R = 6371.0;</span>
+<span class="fc" id="L492">        double lat1 = Math.toRadians(poi1.getLatitude());</span>
+<span class="fc" id="L493">        double lon1 = Math.toRadians(poi1.getLongitude());</span>
+<span class="fc" id="L494">        double lat2 = Math.toRadians(poi2.getLatitude());</span>
+<span class="fc" id="L495">        double lon2 = Math.toRadians(poi2.getLongitude());</span>
+<span class="fc" id="L496">        double dLat = lat2 - lat1;</span>
+<span class="fc" id="L497">        double dLon = lon2 - lon1;</span>
+<span class="fc" id="L498">        double a = Math.pow(Math.sin(dLat / 2), 2) + Math.cos(lat1) * Math.cos(lat2) * Math.pow(Math.sin(dLon / 2), 2);</span>
+<span class="fc" id="L499">        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));</span>
+
+<span class="fc" id="L501">        return R * c;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

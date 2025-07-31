@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RecommendationInputDTO.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">COMP47360_Team8_Backend</a> &gt; <a href="index.source.html" class="el_package">team8.comp47360_team8_backend.dto</a> &gt; <span class="el_source">RecommendationInputDTO.java</span></div><h1>RecommendationInputDTO.java</h1><pre class="source lang-java linenums">package team8.comp47360_team8_backend.dto;
+
+import java.time.ZonedDateTime;
+
+/**
+ * @Author : Ze Li
+ * @Date : 26/06/2025 22:17
+ * @Version : V1.0
+ * @Description :
+ */
+public class RecommendationInputDTO {
+    private String poiName;
+    private Long zoneId;
+    private Double latitude;
+    private Double longitude;
+    private ZonedDateTime time;
+    private String transitType;
+    private String poiTypeName;
+    private Integer stayMinutes;
+
+<span class="fc" id="L21">    public RecommendationInputDTO() {</span>
+<span class="fc" id="L22">    }</span>
+
+<span class="fc" id="L24">    public RecommendationInputDTO(String poiName, Long zoneId, Double latitude, Double longitude, ZonedDateTime time, String transitType, String poiTypeName, Integer StayMinutes) {</span>
+<span class="fc" id="L25">        this.poiName = poiName;</span>
+<span class="fc" id="L26">        this.zoneId = zoneId;</span>
+<span class="fc" id="L27">        this.latitude = latitude;</span>
+<span class="fc" id="L28">        this.longitude = longitude;</span>
+<span class="fc" id="L29">        this.time = time;</span>
+<span class="fc" id="L30">        this.transitType = transitType;</span>
+<span class="fc" id="L31">        this.poiTypeName = poiTypeName;</span>
+<span class="fc" id="L32">        this.stayMinutes = StayMinutes;</span>
+<span class="fc" id="L33">    }</span>
+
+    public Long getZoneId() {
+<span class="fc" id="L36">        return zoneId;</span>
+    }
+
+    public void setZoneId(Long zoneId) {
+<span class="fc" id="L40">        this.zoneId = zoneId;</span>
+<span class="fc" id="L41">    }</span>
+
+    public String getPoiName() {
+<span class="fc" id="L44">        return poiName;</span>
+    }
+
+    public void setPoiName(String poiName) {
+<span class="fc" id="L48">        this.poiName = poiName;</span>
+<span class="fc" id="L49">    }</span>
+
+    public Double getLatitude() {
+<span class="fc" id="L52">        return latitude;</span>
+    }
+
+    public void setLatitude(Double latitude) {
+<span class="fc" id="L56">        this.latitude = latitude;</span>
+<span class="fc" id="L57">    }</span>
+
+    public Double getLongitude() {
+<span class="fc" id="L60">        return longitude;</span>
+    }
+
+    public void setLongitude(Double longitude) {
+<span class="fc" id="L64">        this.longitude = longitude;</span>
+<span class="fc" id="L65">    }</span>
+
+    public ZonedDateTime getTime() {
+<span class="fc" id="L68">        return time;</span>
+    }
+
+    public void setTime(ZonedDateTime time) {
+<span class="fc" id="L72">        this.time = time;</span>
+<span class="fc" id="L73">    }</span>
+
+    public String getTransitType() {
+<span class="fc" id="L76">        return transitType;</span>
+    }
+
+    public void setTransitType(String transitType) {
+<span class="fc" id="L80">        this.transitType = transitType;</span>
+<span class="fc" id="L81">    }</span>
+
+    public String getPoiTypeName() {
+<span class="fc" id="L84">        return poiTypeName;</span>
+    }
+
+    public void setPoiTypeName(String poiTypeName) {
+<span class="fc" id="L88">        this.poiTypeName = poiTypeName;</span>
+<span class="fc" id="L89">    }</span>
+
+    public void setStayMinutes(Integer stayMinutes) {
+<span class="fc" id="L92">        this.stayMinutes = stayMinutes;</span>
+<span class="fc" id="L93">    }</span>
+
+    public Integer getStayMinutes() {
+<span class="fc" id="L96">        return stayMinutes;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>
