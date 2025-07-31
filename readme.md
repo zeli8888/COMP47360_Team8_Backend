@@ -3,6 +3,7 @@
 **[Planhattan](https://planhattan.ddns.net)** is a responsive web application designed to helps tourists plan their day by predicting and visualising crowd data for popular attractions, restaurants, parks, and museums. 🎉
 
 **Frontend Repository**: https://github.com/RaghulPrasath-Here/PlanHattan-FrontEnd.git
+
 **Machine Learning Model Repository**: https://github.com/Always228474/COMP47360_Team8_Data.git
 
 ![Project Structure](docs/project_structure.png)
@@ -15,7 +16,6 @@
   - [⚙️ Configuration](#️-configuration)
   - [🔧 Installation](#-installation)
 - [💻 Usage](#-usage)
-- [🐛 Common Bugs](#-common-bugs)
 - [📂 Project Structure](#-project-structure)
 - [🤝 Contributing](#-contributing)
 - [📝 License](#-license)
