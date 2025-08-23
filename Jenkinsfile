@@ -12,6 +12,7 @@ pipeline{
     OPEN_WEATHER_KEY = credentials('OPEN_WEATHER_KEY')
     GOOGLE_OAUTH2_CLIENT_ID = credentials('GOOGLE_OAUTH2_CLIENT_ID')
     GOOGLE_OAUTH2_CLIENT_SECRET = credentials('GOOGLE_OAUTH2_CLIENT_SECRET')
+    PLANHATTAN_ML_URL = 'http://planhattan-ml:5000/api/'
   }
 
   stages{
