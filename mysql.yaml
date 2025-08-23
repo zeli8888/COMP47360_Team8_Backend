@@ -10,7 +10,7 @@ services:
     networks:
       - planhattan-network
     environment:
-      - MYSQL_ROOT_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
 
 networks:
   planhattan-network:

@@ -11,7 +11,7 @@ services:
       - planhattan-network
     environment:
       - OPEN_WEATHER_KEY=${OPEN_WEATHER_KEY}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - DB_PASSWORD=${DB_PASSWORD}
       - PLANHATTAN_MYSQL_URL=jdbc:mysql://planhattan-mysql:3306/comp47360
       - GOOGLE_OAUTH2_CLIENT_ID=${GOOGLE_OAUTH2_CLIENT_ID}
       - GOOGLE_OAUTH2_CLIENT_SECRET=${GOOGLE_OAUTH2_CLIENT_SECRET}

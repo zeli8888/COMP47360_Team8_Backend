@@ -1,8 +1,17 @@
 pipeline{
 
   agent any
+  tools {
+  maven 'Maven'
+  }
   environment {
     version = '2.0'
+    DB_PASSWORD = credentials('DB_PASSWORD')
+    PLANHATTAN_MYSQL_VOLUME = credentials('PLANHATTAN_MYSQL_VOLUME')
+    PLANHATTAN_UPLOADS = credentials('PLANHATTAN_UPLOADS')
+    OPEN_WEATHER_KEY = credentials('OPEN_WEATHER_KEY')
+    GOOGLE_OAUTH2_CLIENT_ID = credentials('GOOGLE_OAUTH2_CLIENT_ID')
+    GOOGLE_OAUTH2_CLIENT_SECRET = credentials('GOOGLE_OAUTH2_CLIENT_SECRET')
   }
 
   stages{
@@ -34,17 +43,12 @@ pipeline{
       }
     }
 
-    stage('Test'){
+    stage('Test and Build'){
       steps{
-        sh 'mvn clean'
-        sh 'mvn test'
-        // sh 'mvn test -Dspring.profiles.active=test --debug'
-      }
-    }
-
-    stage('Build'){
-      steps{
-        sh 'mvn clean package'
+        sh '''
+          MAVEN_OPTS="-Xms256m -Xmx512m -Dlog.level=WARN" \
+          mvn clean package -Dsurefire.forkCount=1 -Dsurefire.reuseForks=false -T 1
+        '''
       }
     }
 
