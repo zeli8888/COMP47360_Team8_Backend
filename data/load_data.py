@@ -64,7 +64,7 @@ def load_table_data(engine, table):
     df.to_sql(f'{table}', engine, if_exists='append', index=False, method='multi', chunksize=1000)
     
 if __name__ == "__main__":
-    engine = get_mysql_engine(f"mysql+pymysql://root:{os.getenv('MYSQL_PASSWORD')}@127.0.0.1:3307/comp47360", True)
+    engine = get_mysql_engine(f"mysql+pymysql://root:{os.getenv('DB_PASSWORD')}@127.0.0.1:3307/comp47360", True)
     try:
         for table in ['zone', 'poitype', 'poi']:
             load_table_data(engine, table)
