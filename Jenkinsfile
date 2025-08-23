@@ -20,7 +20,7 @@ pipeline{
       steps{
         sh script: 'docker stop planhattan-mysql', returnStatus: true
         sh script: 'docker rm planhattan-mysql', returnStatus: true
-        sh 'docker-compose -p planhattan -f mysql.yaml up -d --force-recreate'
+        sh 'docker compose -p planhattan -f mysql.yaml up -d --force-recreate'
       }
     }
 
@@ -65,7 +65,7 @@ pipeline{
       steps{
         sh script: 'docker stop planhattan-api', returnStatus: true
         sh script: 'docker rm planhattan-api || true', returnStatus: true
-        sh "export version=${version} && docker-compose -p planhattan -f planhattan-api.yaml up -d --force-recreate"
+        sh "export version=${version} && docker compose -p planhattan -f planhattan-api.yaml up -d --force-recreate"
       }
     }
   }
