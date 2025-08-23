@@ -1,10 +1,10 @@
 # 🛞 Planhattan Backend API
 
-**[Planhattan](https://planhattan.ddns.net)** is a responsive web application designed to helps tourists plan their day by predicting and visualising crowd data for popular attractions, restaurants, parks, and museums. 🎉
+**[Planhattan](https://zeli8888.ddns.net/planhattan)** is a responsive web application designed to helps tourists plan their day by predicting and visualising crowd data for popular attractions, restaurants, parks, and museums. 🎉
 
-**Frontend Repository**: https://github.com/RaghulPrasath-Here/PlanHattan-FrontEnd.git
+**Frontend Repository**: https://github.com/zeli8888/PlanHattan-FrontEnd.git
 
-**Machine Learning Model Repository**: https://github.com/Always228474/COMP47360_Team8_Data.git
+**Machine Learning Model Repository**: https://github.com/zeli8888/COMP47360_Team8_Data.git
 
 ![Project Structure](docs/project_structure.png)
 
@@ -63,7 +63,7 @@
 
     ```env
     PLANHATTAN_MYSQL_URL=your_mysql_database_url
-    MYSQL_PASSWORD=your_mysql_password
+    DB_PASSWORD=your_mysql_password
     PLANHATTAN_MYSQL_VOLUME=your_expected_mysql_container_volume_url
     PLANHATTAN_ML_URL=your_machine_learning_model_container_url
     PLANHATTAN_UPLOADS=your_expected_container_volume_url_for_user_upload_files
@@ -118,22 +118,16 @@ docker pull zeli8888/planhattan-api:{version_you_like}
 ```
 2. run mysql container
 ```bash
-docker-compose -p planhattan -f mysql.yaml up -d --force-recreate
+docker compose -p planhattan -f mysql.yaml up -d --force-recreate
 ```
 3. run backend docker container
 ```bash
-export version=${version_you_like} && docker-compose -p planhattan -f planhattan-api.yaml up -d --force-recreate
+export version=${version_you_like} && docker compose -p planhattan -f planhattan-api.yaml up -d --force-recreate
 ```
 
-4. initial data load (Only required once, please install required python packages, or manually load data from [poitype_data.csv](data/poitype_data.csv), [zone_data.csv](data/zone_data.csv) and [poi_data.csv](data/poi_data.csv))
-```bash
-cd data
-python load_data.py
-```
+4. Access the application at `http://127.0.0.1:8000`.
 
-5. Access the application at `http://127.0.0.1:8000`.
-
-6. Configure Nginx for outer access (HTTPS is necessary).
+5. Configure Nginx for outer access (HTTPS is necessary).
 
 ---
 
@@ -142,7 +136,7 @@ python load_data.py
     - [mysql.yaml](mysql.yaml) for mysql database configuration.
     - [planhattan-api.yaml](planhattan-api.yaml) for backend deploy configuration
     - [Jenkinsfile](Jenkinsfile) for jenkins deploy stage configuration
-- data: database data
+- data: database data for reference
 - docs: example api calls with Postman, check [api_example.md](docs/api_example.md)
 - JMeter: load test results
 - Jacoco: unit/integration test results, check [index.html](jacoco/index.html)
