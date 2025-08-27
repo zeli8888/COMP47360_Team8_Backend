@@ -47,10 +47,13 @@
 - **Complete Test Cases🧑‍🔬**
     - Unit Testing for all controllers and services
     - Integration Test for authentication and security
+    ![test report](jacoco/project-planhattan-backend-test.png)
     - Load Test using JMeter on UCD College offered server
         - CPU: QEMU Virtual CPU version 2.5+, 2 cores, 2GHz, 64 bits
         - Memory: 4GB
         - Storage: 32GB
+
+    ![load test report](JMeter/load_testing.png)
 ---
 
 ## 🚀 Getting Started
@@ -139,7 +142,7 @@ export version=${version_you_like} && docker compose -p planhattan -f planhattan
 - data: database data for reference
 - docs: example api calls with Postman, check [api_example.md](docs/api_example.md)
 - JMeter: load test results
-- Jacoco: unit/integration test results, check [index.html](jacoco/index.html)
+- Jacoco: unit/integration test results
 - uploads: directory for user to upload profile image
 - src: follow a typical Spring MVC (Model-View-Controller) pattern.
 ---
