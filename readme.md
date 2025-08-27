@@ -44,7 +44,7 @@
     - The Spring Boot Security chain is employed to enforce authentication for all endpoints that require user login.
     - CSRF (Cross-Site Request Forgery) tokens are included for all potentially risky endpoints to safeguard user sessions.
 
-- **Complete Test Cases🧑‍🔬**
+- **Complete Test Cases with 100% Coverage🧑‍🔬**
     - Unit Testing for all controllers and services
     - Integration Test for authentication and security
     ![test report](jacoco/project-planhattan-backend-test.png)
@@ -180,7 +180,7 @@ This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) f
 If you have any questions or feedback, feel free to reach out:
 
 - **Email**: zeli8888@outlook.com 📩
-- **GitHub Issues**: [Open an Issue](https://github.com/zeli8888/BikeShareApp/issues) 🐛
+- **GitHub Issues**: [Open an Issue](https://github.com/zeli8888/COMP47360_Team8_Backend/issues) 🐛
 
 ---
 
