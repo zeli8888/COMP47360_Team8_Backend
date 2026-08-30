@@ -33,6 +33,9 @@ public class SpringSecurityConfiguration {
     @Value("${frontend.urls}")
     private String[] frontendUrls;
 
+    @Value("${frontend.context-path:}")
+    private String frontendContextPath;
+
     @Autowired
     private AuthenticationProvider authenticationProvider;
 
@@ -94,15 +97,15 @@ public class SpringSecurityConfiguration {
         );
 
         http.formLogin(formLogin -> formLogin
-                .loginPage(frontendUrls[0]+"/signin")
+                .loginPage(frontendUrls[0]+frontendContextPath+"/signin")
                 .loginProcessingUrl("/login")
                 .successHandler((request, response, authentication) -> {response.setStatus(HttpServletResponse.SC_OK);})
                 .failureHandler((request, response, exception) -> {response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);})
         );
 
         http.oauth2Login(oauth2 -> oauth2
-                .loginPage(frontendUrls[0]+"/signin")
-                .defaultSuccessUrl(frontendUrls[0]+"/google-callback")
+                .loginPage(frontendUrls[0]+frontendContextPath+"/signin")
+                .defaultSuccessUrl(frontendUrls[0]+frontendContextPath+"/google-callback")
         );
 
         http.logout(logout -> logout
